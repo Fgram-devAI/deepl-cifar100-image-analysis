@@ -1,0 +1,11 @@
+# Vision Transformer (from-scratch tiny ViT) configuration
+
+architecture: vit
+head: binary
+patch_size: 4
+embedding_dim: 128
+num_blocks: 2
+num_heads: 4
+mlp_dim: 256
+
+# ViT does not have activation or masking axes (not applicable to transformers)

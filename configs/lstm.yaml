@@ -1,0 +1,8 @@
+# LSTM configuration
+
+architecture: lstm
+activation: tanh
+use_masking: false
+head: binary
+hidden_units: 64
+dropout: 0.2

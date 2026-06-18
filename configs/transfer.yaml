@@ -1,0 +1,8 @@
+# Transfer learning (MobileNetV3Small) configuration
+
+architecture: transfer
+head: binary
+freeze_backbone: true
+input_size: 96
+
+# Transfer does not have activation or masking axes (CNN-based, not sequential)

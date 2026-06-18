@@ -1,0 +1,14 @@
+# RNN configuration (vanilla RNN with tanh activation)
+
+architecture: rnn
+activation: tanh
+use_masking: false
+head: binary
+hidden_units: 64
+dropout: 0.2
+
+# Inherits from base.yaml:
+# seed, batch_size, epochs, optimizer, etc.
+
+# Overrides (if needed):
+# epochs: 50  # Can increase for RNN

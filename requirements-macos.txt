@@ -1,0 +1,5 @@
+-r requirements.txt
+
+# Optional Apple Silicon GPU acceleration for local Mac experiments.
+# Colab and non-macOS environments do not need this package.
+tensorflow-metal

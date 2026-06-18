@@ -1,0 +1,21 @@
+# Base configuration: shared defaults for all runs.
+
+# Reproducibility
+seed: 42
+
+# Data
+subset_size: 20000  # Ablations run on 20k-image subset. Set to null for full 120k (final runs).
+batch_size: 32
+shuffle: true
+prefetch: true
+
+# Training
+epochs: 50
+optimizer: adam
+learning_rate: 0.001
+clipnorm: 1.0  # Gradient clipping for ReLU stability; applied when activation="relu"
+
+# Output
+output_dir: "results"
+log_metrics: true
+save_weights: true
