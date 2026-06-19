@@ -15,9 +15,11 @@ from data.preprocessing import (
 )
 from data.tasks import (
     BinaryTask,
+    MulticlassTask,
     class_counts,
     make_binary_labels,
     make_cifar100_binary_task,
+    make_cifar100_multiclass_task,
 )
 
 __all__ = [
@@ -25,6 +27,7 @@ __all__ = [
     "CIFAR100_COARSE_LABEL_NAMES",
     "CIFAR100_FINE_LABEL_NAMES",
     "Cifar100Split",
+    "MulticlassTask",
     "apply_row_masking",
     "class_counts",
     "get_cifar100_label_names",
@@ -32,6 +35,7 @@ __all__ = [
     "load_cifar100",
     "make_binary_labels",
     "make_cifar100_binary_task",
+    "make_cifar100_multiclass_task",
     "make_pipeline",
     "normalize_images",
     "to_image",
