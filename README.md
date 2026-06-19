@@ -54,16 +54,10 @@ either deactivate Conda first or make sure `which python` points inside `./venv/
 
 ### Dependencies
 
-For the core project environment:
+For the core project environment, including tests, notebooks, and Hugging Face dataset loading:
 
 ```bash
 pip install -r requirements.txt
-```
-
-For Hugging Face dataset fetching:
-
-```bash
-pip install -r requirements-hf.txt
 ```
 
 For Apple Silicon Macs, use the macOS overlay to include TensorFlow Metal acceleration:
