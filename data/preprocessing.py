@@ -1,68 +1,61 @@
-"""Image preprocessing: row-as-timestep conversion and masking."""
+"""Image preprocessing: normalization, row-as-timestep conversion, row masking."""
 
-from typing import Tuple
+from typing import Optional
+
 import numpy as np
-import tensorflow as tf
 
 
-def to_sequence(images: np.ndarray) -> np.ndarray:
-    """
-    Convert images from (N, 32, 32, 3) to row-as-timestep sequence (N, 32, 96).
-
-    Each row of the image becomes a timestep; the 32 pixels × 3 channels = 96 features.
-
-    Args:
-        images: Array of shape (N, 32, 32, 3) with values in [0, 1].
-
-    Returns:
-        Sequence array of shape (N, 32, 96).
-
-    Notes:
-        This contract is fixed per CLAUDE.md. Do not change T or feature dimension.
-    """
-    # TODO: Implement row-as-timestep reshaping.
-    # Expected: (N, 32, 32, 3) → (N, 32, 32*3) → (N, 32, 96)
-    raise NotImplementedError("to_sequence not yet implemented")
+def normalize_images(images: np.ndarray) -> np.ndarray:
+    """Scale uint8 images in [0, 255] to float32 in [0, 1]."""
+    return (images.astype(np.float32)) / 255.0
 
 
 def to_image(images: np.ndarray) -> np.ndarray:
+    """Return a (N, 32, 32, 3) float32 view for CNN/transfer branches."""
+    if images.ndim != 4 or images.shape[1:] != (32, 32, 3):
+        raise ValueError(
+            f"to_image expects shape (N, 32, 32, 3); got {images.shape}"
+        )
+    return images.astype(np.float32, copy=False)
+
+
+def to_sequence(images: np.ndarray) -> np.ndarray:
+    """Reshape (N, 32, 32, 3) images to (N, 32, 96) row-as-timestep sequences.
+
+    Each row becomes one timestep; the 32 pixels x 3 channels per row become
+    96 features.
     """
-    Return images in (N, 32, 32, 3) format for the CNN branch.
-
-    May apply normalization or identity passthrough.
-
-    Args:
-        images: Array of shape (N, 32, 32, 3) with values in [0, 1].
-
-    Returns:
-        Array of shape (N, 32, 32, 3).
-    """
-    # TODO: Implement normalization or passthrough for CNN input.
-    raise NotImplementedError("to_image not yet implemented")
+    if images.ndim != 4 or images.shape[1:] != (32, 32, 3):
+        raise ValueError(
+            f"to_sequence expects shape (N, 32, 32, 3); got {images.shape}"
+        )
+    n = images.shape[0]
+    return images.astype(np.float32, copy=False).reshape(n, 32, 96)
 
 
 def apply_row_masking(
-    seq: np.ndarray, drop_prob: float = 0.0, mask_value: float = 0.0
+    seq: np.ndarray,
+    drop_prob: float = 0.0,
+    mask_value: float = 0.0,
+    seed: Optional[int] = None,
 ) -> np.ndarray:
+    """Randomly replace whole rows in (batch, T=32, 96) sequences with mask_value.
+
+    Sentinel-collision gotcha (CLAUDE.md §10): with mask_value=0.0 and pixels
+    normalized to [0, 1], legitimately black rows look identical to masked rows.
+    If a downstream Masking layer relies on the sentinel, prefer an out-of-range
+    value (e.g. -1.0) and pass the same value to Masking(mask_value=...).
     """
-    Randomly mask (replace) whole rows in a sequence to simulate missing timesteps.
-
-    Args:
-        seq: Sequence array of shape (batch, T=32, features=96).
-        drop_prob: Probability of masking each row. If 0.0, no masking applied.
-        mask_value: Value to fill masked rows with.
-
-    Returns:
-        Masked sequence array of shape (batch, 32, 96).
-
-    Notes:
-        **Sentinel collision gotcha (from CLAUDE.md):**
-        If mask_value=0.0 and normalized pixels can legitimately be 0.0, this will
-        incorrectly skip valid rows. Consider:
-          1. Masking rows to 0.0 *before* normalizing to [0, 1].
-          2. Using an out-of-range sentinel (e.g., -1.0) with matching Masking(mask_value).
-        Document your choice in the implementation.
-    """
-    # TODO: Implement row masking. Generate a mask for each row in each batch,
-    # and replace selected rows with mask_value.
-    raise NotImplementedError("apply_row_masking not yet implemented")
+    if seq.ndim != 3 or seq.shape[1:] != (32, 96):
+        raise ValueError(
+            f"apply_row_masking expects shape (batch, 32, 96); got {seq.shape}"
+        )
+    if not 0.0 <= drop_prob <= 1.0:
+        raise ValueError(f"drop_prob must be in [0, 1]; got {drop_prob}")
+    if drop_prob == 0.0:
+        return seq.astype(np.float32, copy=False)
+    rng = np.random.default_rng(seed)
+    mask = rng.random(size=seq.shape[:2]) < drop_prob
+    out = seq.astype(np.float32, copy=True)
+    out[mask] = mask_value
+    return out
