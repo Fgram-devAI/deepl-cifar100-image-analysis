@@ -42,6 +42,8 @@ results/*
 /superpowers/
 CLAUDE.md
 .claude/
+.agents/
+skills-lock.json
 
 # Jupyter
 .ipynb_checkpoints/
