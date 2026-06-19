@@ -1,5 +1,6 @@
 """CIFAR-100 dataset loading. Downloads happen only inside `load_cifar100`."""
 
+import argparse
 from dataclasses import dataclass
 from typing import Callable, Literal, Optional
 
@@ -110,3 +111,36 @@ def make_pipeline(
     if prefetch:
         ds = ds.prefetch(tf.data.AUTOTUNE)
     return ds
+
+
+def _print_split_summary(split: Split) -> None:
+    """Load a split and print a compact shape/label summary."""
+    data = load_cifar100(split)
+    print(
+        f"{split}: images={data.images.shape} "
+        f"fine={data.fine_labels.shape} coarse={data.coarse_labels.shape} "
+        f"fine_range=({data.fine_labels.min()}, {data.fine_labels.max()}) "
+        f"coarse_range=({data.coarse_labels.min()}, {data.coarse_labels.max()})"
+    )
+
+
+def main() -> None:
+    """CLI entrypoint for fetching/caching CIFAR-100 and checking split shapes."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--split",
+        choices=("train", "test", "both"),
+        default="both",
+        help="CIFAR-100 split to fetch/cache and summarize.",
+    )
+    args = parser.parse_args()
+
+    splits: tuple[Split, ...] = (
+        ("train", "test") if args.split == "both" else (args.split,)
+    )
+    for split in splits:
+        _print_split_summary(split)
+
+
+if __name__ == "__main__":
+    main()
