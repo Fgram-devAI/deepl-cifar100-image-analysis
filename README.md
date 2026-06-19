@@ -60,6 +60,12 @@ For the core project environment:
 pip install -r requirements.txt
 ```
 
+For Hugging Face dataset fetching:
+
+```bash
+pip install -r requirements-hf.txt
+```
+
 For Apple Silicon Macs, use the macOS overlay to include TensorFlow Metal acceleration:
 
 ```bash
@@ -78,6 +84,15 @@ python -c "import tensorflow as tf; print(tf.__version__); print(tf.config.list_
 ## Local Code Commands
 
 ```bash
+# Fetch/cache CIFAR-100 through Hugging Face
+venv/bin/python data/loaders.py --split both
+
+# Optional fallback: fetch/cache CIFAR-100 through Keras
+venv/bin/python data/loaders.py --source keras --split both
+
+# Data pipeline checks
+venv/bin/pytest -q tests/test_preprocessing.py tests/test_labels.py tests/test_loaders.py tests/test_tasks.py tests/test_pipeline.py tests/test_acceptance.py
+
 # Single training run with a given config
 python -m training.train --config configs/lstm.yaml
 
@@ -128,5 +143,3 @@ Suggested notebook sequence:
 - **Guardrails:** deterministic seeds, small batches, `tf.data` pipelines, and clear separation
   between training and evaluation.
 - **Notebooks:** runnable independently in Colab without importing local project modules.
-
-For locked design decisions and constraints, see `CLAUDE.md`.

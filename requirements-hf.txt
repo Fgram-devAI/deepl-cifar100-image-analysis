@@ -1,0 +1,5 @@
+-r requirements.txt
+
+# Hugging Face dataset backend for `uoft-cs/cifar100`.
+# Install before running `data/loaders.py` with the default source.
+datasets>=2.19,<3.0

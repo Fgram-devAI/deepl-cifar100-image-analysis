@@ -39,6 +39,11 @@ env/
 data/raw/
 results/*
 !results/.gitkeep
+/superpowers/
+CLAUDE.md
+.claude/
+.agents/
+skills-lock.json
 
 # Jupyter
 .ipynb_checkpoints/
