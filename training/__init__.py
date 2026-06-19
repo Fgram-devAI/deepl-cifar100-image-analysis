@@ -1,5 +1,5 @@
 """Training module."""
 
-from .train import train, load_config, build_model
+from .train import train, load_config, train_from_config
 
-__all__ = ["train", "load_config", "build_model"]
+__all__ = ["train", "load_config", "train_from_config"]

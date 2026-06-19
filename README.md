@@ -93,8 +93,13 @@ venv/bin/python data/loaders.py --source keras --split both
 # Data pipeline checks
 venv/bin/pytest -q tests/test_preprocessing.py tests/test_labels.py tests/test_loaders.py tests/test_tasks.py tests/test_pipeline.py tests/test_acceptance.py
 
-# Single training run with a given config
-python -m training.train --config configs/lstm.yaml
+# Baseline CNN training run on a CIFAR-100 binary task (fine `cow` vs. rest by default)
+venv/bin/python -m training.train --config configs/baseline_cnn.yaml
+
+# For a smoke run, set `subset_size: 512` and `epochs: 1` in the YAML first.
+# Subsetting is stratified after binary labels are built.
+# Other architecture configs (lstm.yaml, vit.yaml, transfer.yaml) will work
+# once their model builders are implemented on later branches.
 
 # Full ablation sweep on the configured subset/task
 python -m experiments.run_ablations

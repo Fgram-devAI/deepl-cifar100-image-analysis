@@ -1,85 +1,259 @@
-"""Training loop: config-driven training for any model."""
+"""Config-driven training entrypoint for the baseline CNN."""
 
 import argparse
 import json
-import yaml
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict, Optional, Tuple
+
 import numpy as np
 import tensorflow as tf
-from tensorflow import keras
+import yaml
 from tensorflow.keras.optimizers import Adam
 
-# TODO: Import your data, model, and training utilities as they are implemented.
-# from data import load_cifake, make_pipeline
-# from models import build_rnn, build_lstm, build_bilstm, build_vit, build_transfer
-# from training.losses import get_loss
-# from training.callbacks import get_callbacks
+from data import (
+    Cifar100Split,
+    load_cifar100,
+    make_cifar100_binary_task,
+    make_pipeline,
+)
+from evaluation.metrics import compute_confusion_matrix, compute_metrics
+from models.baseline import build_baseline_cnn
+from training.callbacks import get_callbacks
+from training.class_weights import compute_balanced_class_weights
+from training.losses import get_loss
+from training.splits import stratified_train_val_split
 
 
-def load_config(config_path: str) -> Dict[str, Any]:
+def load_config(config_path) -> Dict[str, Any]:
+    """Load a YAML config from disk."""
+    with Path(config_path).open() as f:
+        return yaml.safe_load(f)
+
+
+def _build_model(config: Dict[str, Any]) -> tf.keras.Model:
+    architecture = config.get("architecture", "baseline_cnn")
+    if architecture != "baseline_cnn":
+        raise ValueError(
+            f"This branch only ships the 'baseline_cnn' architecture; "
+            f"got {architecture!r}"
+        )
+    return build_baseline_cnn(dropout=float(config.get("dropout", 0.3)))
+
+
+def _binary_task(
+    split: Cifar100Split, config: Dict[str, Any]
+) -> Tuple[np.ndarray, np.ndarray, Dict[int, int]]:
+    task_cfg = config["task"]
+    task = make_cifar100_binary_task(
+        split,
+        label_level=task_cfg["label_level"],
+        positive_label_names=task_cfg["positive_label_names"],
+        seed=int(config.get("seed", 42)),
+    )
+    return task.images, task.binary_labels, task.class_counts
+
+
+def _stratified_subset(
+    images: np.ndarray,
+    labels: np.ndarray,
+    *,
+    subset_size: int | None,
+    seed: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Optionally take a deterministic stratified subset after binary labeling.
+
+    This avoids fine-class smoke runs with zero positives, which can happen
+    when a raw CIFAR-100 head slice is used before task labels are built.
     """
-    Load YAML configuration file.
+    if subset_size is None or subset_size >= labels.shape[0]:
+        return images, labels
+    if subset_size < 2:
+        raise ValueError("subset_size must be at least 2 when set")
 
-    Args:
-        config_path: Path to YAML config file.
+    rng = np.random.default_rng(seed)
+    selected_parts: list[np.ndarray] = []
+    for cls in (0, 1):
+        cls_idx = np.flatnonzero(labels == cls)
+        if cls_idx.size == 0:
+            continue
+        n_cls = max(1, int(round(subset_size * cls_idx.size / labels.shape[0])))
+        n_cls = min(n_cls, cls_idx.size)
+        selected_parts.append(rng.choice(cls_idx, size=n_cls, replace=False))
 
-    Returns:
-        Dictionary of configuration parameters.
+    selected = np.concatenate(selected_parts)
+    if selected.shape[0] > subset_size:
+        selected = rng.choice(selected, size=subset_size, replace=False)
+    elif selected.shape[0] < subset_size:
+        remaining = np.setdiff1d(np.arange(labels.shape[0]), selected, assume_unique=False)
+        extra = rng.choice(
+            remaining,
+            size=min(subset_size - selected.shape[0], remaining.shape[0]),
+            replace=False,
+        )
+        selected = np.concatenate([selected, extra])
+    rng.shuffle(selected)
+    return images[selected], labels[selected]
+
+
+def _class_counts(labels: np.ndarray) -> Dict[str, int]:
+    return {
+        "0": int((labels == 0).sum()),
+        "1": int((labels == 1).sum()),
+    }
+
+
+def train_from_config(
+    config: Dict[str, Any],
+    *,
+    train_split: Optional[Cifar100Split] = None,
+    test_split: Optional[Cifar100Split] = None,
+) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """Run the full baseline training pipeline.
+
+    When `train_split` / `test_split` aren't injected, they're loaded via
+    `data.load_cifar100`, which downloads CIFAR-100 from Hugging Face on
+    first use. Tests inject synthetic splits to keep the suite offline.
+
+    Returns (history_dict, test_metrics_dict).
     """
-    # TODO: Implement config loading. Use yaml.safe_load().
-    raise NotImplementedError("load_config not yet implemented")
+    seed = int(config.get("seed", 42))
+    np.random.seed(seed)
+    tf.keras.utils.set_random_seed(seed)
+
+    run_dir = Path(config["output_dir"]) / config["run_name"]
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    if train_split is None:
+        train_split = load_cifar100("train")
+    if test_split is None:
+        test_split = load_cifar100("test")
+
+    train_images, train_labels, _ = _binary_task(train_split, config)
+    test_images, test_labels, test_counts = _binary_task(test_split, config)
+
+    train_images, train_labels = _stratified_subset(
+        train_images,
+        train_labels,
+        subset_size=config.get("subset_size"),
+        seed=seed,
+    )
+    test_images, test_labels = _stratified_subset(
+        test_images,
+        test_labels,
+        subset_size=config.get("subset_size"),
+        seed=seed + 1,
+    )
+    test_counts = {
+        0: int((test_labels == 0).sum()),
+        1: int((test_labels == 1).sum()),
+    }
+
+    val_cfg = config["validation"]
+    x_tr, y_tr, x_val, y_val = stratified_train_val_split(
+        train_images,
+        train_labels,
+        val_fraction=float(val_cfg["fraction"]),
+        seed=seed,
+    )
+
+    class_balance = {
+        "train": _class_counts(y_tr),
+        "val": _class_counts(y_val),
+        "test": _class_counts(test_labels),
+    }
+    (run_dir / "class_balance.json").write_text(
+        json.dumps(class_balance, indent=2)
+    )
+
+    batch_size = int(config.get("batch_size", 64))
+    shuffle_buffer = int(config.get("shuffle_buffer", 4096))
+    train_ds = make_pipeline(
+        x_tr, y_tr,
+        view="image",
+        batch_size=batch_size,
+        shuffle=True,
+        shuffle_buffer=shuffle_buffer,
+        seed=seed,
+    )
+    val_ds = make_pipeline(
+        x_val, y_val,
+        view="image",
+        batch_size=batch_size,
+        shuffle=False,
+    )
+    test_ds = make_pipeline(
+        test_images, test_labels,
+        view="image",
+        batch_size=batch_size,
+        shuffle=False,
+    )
+
+    strategy = config.get("class_imbalance", {}).get("strategy", "none")
+    class_weight = (
+        compute_balanced_class_weights(y_tr)
+        if strategy == "class_weights"
+        else None
+    )
+
+    model = _build_model(config)
+    model.compile(
+        optimizer=Adam(learning_rate=float(config.get("learning_rate", 1e-3))),
+        loss=get_loss("binary"),
+        metrics=["accuracy"],
+    )
+
+    es_cfg = config.get("early_stopping", {})
+    callbacks = get_callbacks(
+        run_dir,
+        patience=int(es_cfg.get("patience", 5)),
+        monitor=str(es_cfg.get("monitor", "val_loss")),
+    )
+
+    history = model.fit(
+        train_ds,
+        validation_data=val_ds,
+        epochs=int(config.get("epochs", 1)),
+        class_weight=class_weight,
+        callbacks=callbacks,
+        verbose=0,
+    )
+
+    y_prob = model.predict(test_ds, verbose=0).reshape(-1)
+    metrics = compute_metrics(test_labels, y_prob)
+    cm = compute_confusion_matrix(test_labels, y_prob)
+    metrics["confusion_matrix"] = cm.tolist()
+    metrics["class_counts"] = {str(k): int(v) for k, v in test_counts.items()}
+    (run_dir / "metrics.json").write_text(json.dumps(metrics, indent=2))
+
+    (run_dir / "config.yaml").write_text(yaml.safe_dump(config, sort_keys=False))
+
+    if config.get("save_weights", False):
+        model.save_weights(str(run_dir / "weights.h5"))
+
+    history_dict = dict(history.history)
+    (run_dir / "history.json").write_text(json.dumps(history_dict, indent=2))
+
+    return history_dict, metrics
 
 
-def build_model(config: Dict[str, Any]) -> keras.Model:
-    """
-    Instantiate a model based on config.
-
-    Args:
-        config: Configuration dictionary with "architecture" and hyperparameters.
-
-    Returns:
-        Compiled `keras.Model`.
-    """
-    # TODO: Implement model building.
-    # Read config["architecture"] and call appropriate build_* function.
-    # Pass config parameters (activation, head, hidden_units, etc.).
-    # Return compiled model.
-    raise NotImplementedError("build_model not yet implemented")
+def train(config_path: str) -> None:
+    """CLI shim: load YAML and run `train_from_config` with default splits."""
+    config = load_config(config_path)
+    train_from_config(config)
 
 
-def train(config_path: str):
-    """
-    Main training entrypoint.
-
-    Loads config, builds dataset and model, trains, and saves results.
-
-    Args:
-        config_path: Path to YAML configuration file.
-
-    Notes:
-        Seed is set globally for reproducibility.
-        Results are saved to `results/<run_name>/`.
-    """
-    # TODO: Implement full training loop.
-    # 1. Load config from YAML.
-    # 2. Set random seeds (config["seed"]).
-    # 3. Load dataset (load_cifake with subset_size from config).
-    # 4. Build data pipeline (make_pipeline).
-    # 5. Build model (build_model).
-    # 6. Create optimizer with clipnorm if activation="relu".
-    # 7. Compile model with loss and optimizer.
-    # 8. Run model.fit with callbacks.
-    # 9. Save results (weights, config snapshot, metrics JSON) to results/<run_name>/.
-    raise NotImplementedError("train not yet implemented")
-
-
-def main():
-    """Command-line entrypoint: python -m training.train --config configs/lstm.yaml"""
-    parser = argparse.ArgumentParser(description="Train a model from config.")
-    parser.add_argument("--config", type=str, required=True, help="Path to YAML config file.")
+def main() -> None:
+    """Command-line entrypoint: python -m training.train --config <path>."""
+    parser = argparse.ArgumentParser(
+        description="Train the baseline CNN from a YAML config."
+    )
+    parser.add_argument(
+        "--config",
+        type=str,
+        required=True,
+        help="Path to YAML config file (e.g. configs/baseline_cnn.yaml).",
+    )
     args = parser.parse_args()
-
     train(args.config)
 
 
