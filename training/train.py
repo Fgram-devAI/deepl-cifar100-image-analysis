@@ -453,7 +453,10 @@ def main() -> None:
         "--config",
         type=str,
         required=True,
-        help="Path to YAML config file (e.g. configs/baseline_cnn.yaml).",
+        help=(
+            "Path to YAML config file "
+            "(e.g. configs/binary/coarse/baseline_cnn_flowers.yaml)."
+        ),
     )
     args = parser.parse_args()
     train(args.config)
