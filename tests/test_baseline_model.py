@@ -38,3 +38,35 @@ def test_baseline_cnn_accepts_custom_dropout():
         if isinstance(layer, tf.keras.layers.Dropout)
     ]
     assert dropout_rates and all(r == 0.5 for r in dropout_rates)
+
+
+def test_baseline_cnn_coarse_multiclass_head_has_20_softmax_units():
+    model = build_baseline_cnn(num_classes=20)
+    assert model.output_shape == (None, 20)
+    last = model.layers[-1]
+    assert last.activation.__name__ == "softmax"
+    assert last.units == 20
+
+
+def test_baseline_cnn_fine_multiclass_head_has_100_softmax_units():
+    model = build_baseline_cnn(num_classes=100)
+    assert model.output_shape == (None, 100)
+    last = model.layers[-1]
+    assert last.activation.__name__ == "softmax"
+    assert last.units == 100
+
+
+def test_baseline_cnn_binary_head_still_uses_sigmoid():
+    model = build_baseline_cnn(num_classes=1)
+    last = model.layers[-1]
+    assert last.activation.__name__ == "sigmoid"
+    assert last.units == 1
+    assert model.output_shape == (None, 1)
+
+
+def test_baseline_cnn_rejects_num_classes_below_one():
+    import pytest
+    with pytest.raises(ValueError):
+        build_baseline_cnn(num_classes=0)
+    with pytest.raises(ValueError):
+        build_baseline_cnn(num_classes=-3)
