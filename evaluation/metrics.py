@@ -9,6 +9,7 @@ from typing import Dict
 import numpy as np
 from sklearn.metrics import (
     accuracy_score,
+    average_precision_score,
     confusion_matrix,
     f1_score,
     precision_score,
@@ -49,6 +50,11 @@ def compute_metrics(
     except ValueError:
         roc_auc = float("nan")
 
+    try:
+        pr_auc = float(average_precision_score(y_true_arr, prob))
+    except ValueError:
+        pr_auc = float("nan")
+
     return {
         "accuracy": float(accuracy_score(y_true_arr, y_pred)),
         "precision": float(
@@ -57,6 +63,7 @@ def compute_metrics(
         "recall": float(recall_score(y_true_arr, y_pred, zero_division=0)),
         "f1": float(f1_score(y_true_arr, y_pred, zero_division=0)),
         "roc_auc": roc_auc,
+        "pr_auc": pr_auc,
     }
 
 
@@ -71,3 +78,29 @@ def compute_confusion_matrix(
     prob = _flatten_prob(y_prob)
     y_pred = (prob >= threshold).astype(np.int64)
     return confusion_matrix(y_true_arr, y_pred, labels=[0, 1]).astype(np.int64)
+
+
+def find_best_threshold(
+    y_true: np.ndarray,
+    y_prob: np.ndarray,
+    *,
+    thresholds: np.ndarray | None = None,
+    metric: str = "f1",
+) -> tuple[float, dict[str, float]]:
+    """Find the threshold with best validation metric."""
+    if thresholds is None:
+        thresholds = np.linspace(0.01, 0.99, 99)
+
+    best_threshold = 0.5
+    best_metrics = compute_metrics(y_true, y_prob, threshold=0.5)
+    best_score = best_metrics[metric]
+
+    for threshold in thresholds:
+        metrics = compute_metrics(y_true, y_prob, threshold=float(threshold))
+        score = metrics[metric]
+        if score > best_score:
+            best_threshold = float(threshold)
+            best_metrics = metrics
+            best_score = score
+
+    return best_threshold, best_metrics

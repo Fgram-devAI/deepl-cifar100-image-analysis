@@ -15,7 +15,11 @@ from data import (
     make_cifar100_binary_task,
     make_pipeline,
 )
-from evaluation.metrics import compute_confusion_matrix, compute_metrics
+from evaluation.metrics import (
+    compute_confusion_matrix,
+    compute_metrics,
+    find_best_threshold,
+)
 from models.baseline import build_baseline_cnn
 from training.callbacks import get_callbacks
 from training.class_weights import compute_balanced_class_weights
@@ -216,12 +220,22 @@ def train_from_config(
         epochs=int(config.get("epochs", 1)),
         class_weight=class_weight,
         callbacks=callbacks,
-        verbose=0,
+        verbose=1,
     )
 
-    y_prob = model.predict(test_ds, verbose=0).reshape(-1)
-    metrics = compute_metrics(test_labels, y_prob)
-    cm = compute_confusion_matrix(test_labels, y_prob)
+    val_prob = model.predict(val_ds, verbose=1).reshape(-1)
+    best_threshold, val_threshold_metrics = find_best_threshold(
+        y_val,
+        val_prob,
+        metric="f1",
+    )
+
+    y_prob = model.predict(test_ds, verbose=1).reshape(-1)
+    metrics = compute_metrics(test_labels, y_prob, threshold=best_threshold)
+    cm = compute_confusion_matrix(test_labels, y_prob, threshold=best_threshold)
+
+    metrics["threshold"] = best_threshold
+    metrics["validation_threshold_metrics"] = val_threshold_metrics
     metrics["confusion_matrix"] = cm.tolist()
     metrics["class_counts"] = {str(k): int(v) for k, v in test_counts.items()}
     (run_dir / "metrics.json").write_text(json.dumps(metrics, indent=2))

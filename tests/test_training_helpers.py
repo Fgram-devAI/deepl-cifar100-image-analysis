@@ -196,6 +196,9 @@ def test_train_from_config_smoke_runs_and_writes_artifacts(
         "recall",
         "f1",
         "roc_auc",
+        "pr_auc",
+        "threshold",
+        "validation_threshold_metrics",
         "confusion_matrix",
         "class_counts",
     ):
