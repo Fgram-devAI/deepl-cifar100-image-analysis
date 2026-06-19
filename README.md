@@ -78,8 +78,11 @@ python -c "import tensorflow as tf; print(tf.__version__); print(tf.config.list_
 ## Local Code Commands
 
 ```bash
-# Fetch/cache CIFAR-100 through Keras
+# Fetch/cache CIFAR-100 through Hugging Face
 venv/bin/python data/loaders.py --split both
+
+# Optional fallback: fetch/cache CIFAR-100 through Keras
+venv/bin/python data/loaders.py --source keras --split both
 
 # Data pipeline checks
 venv/bin/pytest -q tests/test_preprocessing.py tests/test_labels.py tests/test_loaders.py tests/test_tasks.py tests/test_pipeline.py tests/test_acceptance.py

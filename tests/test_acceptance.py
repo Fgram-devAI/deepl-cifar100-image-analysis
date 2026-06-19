@@ -34,7 +34,7 @@ def _fake_loader_factory(synthetic_cifar100):
 
 def test_acceptance_fine_class_image_view(synthetic_cifar100):
     loader = _fake_loader_factory(synthetic_cifar100)
-    split = load_cifar100("train", _loader=loader)
+    split = load_cifar100("train", source="keras", _loader=loader)
     assert isinstance(split, Cifar100Split)
 
     task = make_cifar100_binary_task(
@@ -55,7 +55,7 @@ def test_acceptance_fine_class_image_view(synthetic_cifar100):
 
 def test_acceptance_coarse_superclass_sequence_view(synthetic_cifar100):
     loader = _fake_loader_factory(synthetic_cifar100)
-    split = load_cifar100("train", _loader=loader)
+    split = load_cifar100("train", source="keras", _loader=loader)
 
     task = make_cifar100_binary_task(
         split,

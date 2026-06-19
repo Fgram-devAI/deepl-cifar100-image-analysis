@@ -7,3 +7,4 @@ matplotlib>=3.7,<3.8
 pandas>=2.0,<2.1
 pyyaml>=6.0,<7.0
 tqdm>=4.65,<4.66
+datasets>=2.19,<3.0
