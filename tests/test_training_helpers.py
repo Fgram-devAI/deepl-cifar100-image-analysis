@@ -21,7 +21,7 @@ def test_get_loss_binary_returns_binary_crossentropy():
 
 def test_get_loss_rejects_unknown_head():
     with pytest.raises(ValueError):
-        get_loss("multiclass")
+        get_loss("unknown_head")
 
 
 # --- callbacks ------------------------------------------------------------
@@ -245,3 +245,158 @@ def test_train_from_config_writes_weights_when_requested(
         config, train_split=train_split, test_split=test_split
     )
     assert (tmp_path / "smoke_weights" / "weights.h5").exists()
+
+
+# --- simple_random_train_val_split -------------------------------------------
+
+from training.splits import simple_random_train_val_split  # noqa: E402
+
+
+def test_simple_random_train_val_split_returns_disjoint_splits_with_correct_sizes():
+    rng = np.random.default_rng(1)
+    images = rng.integers(0, 256, size=(100, 32, 32, 3), dtype=np.uint8)
+    labels = np.arange(100, dtype=np.int64)
+
+    x_tr, y_tr, x_val, y_val = simple_random_train_val_split(
+        images, labels, val_fraction=0.2, seed=42
+    )
+
+    assert x_tr.shape[0] + x_val.shape[0] == 100
+    assert x_val.shape[0] == 20
+    assert x_tr.shape[0] == 80
+    # Disjoint: no label appears in both splits (labels are unique ints here).
+    assert len(set(y_tr.tolist()) & set(y_val.tolist())) == 0
+
+
+def test_simple_random_train_val_split_is_deterministic():
+    rng = np.random.default_rng(2)
+    images = rng.integers(0, 256, size=(80, 32, 32, 3), dtype=np.uint8)
+    labels = rng.integers(0, 20, size=80, dtype=np.int64)
+
+    a = simple_random_train_val_split(images, labels, val_fraction=0.25, seed=99)
+    b = simple_random_train_val_split(images, labels, val_fraction=0.25, seed=99)
+    np.testing.assert_array_equal(a[1], b[1])
+    np.testing.assert_array_equal(a[3], b[3])
+
+
+def test_simple_random_train_val_split_rejects_invalid_fraction():
+    rng = np.random.default_rng(3)
+    images = rng.integers(0, 256, size=(50, 32, 32, 3), dtype=np.uint8)
+    labels = np.zeros(50, dtype=np.int64)
+
+    with pytest.raises(ValueError):
+        simple_random_train_val_split(images, labels, val_fraction=0.0, seed=0)
+    with pytest.raises(ValueError):
+        simple_random_train_val_split(images, labels, val_fraction=1.0, seed=0)
+
+
+# --- multiclass training entrypoint tests ------------------------------------
+
+
+def _multiclass_config(tmp_path: Path, run_name: str = "mc_smoke") -> dict:
+    return {
+        "architecture": "baseline_cnn",
+        "run_name": run_name,
+        "seed": 42,
+        "task": {
+            "type": "multiclass",
+            "label_level": "coarse",
+        },
+        "validation": {"fraction": 0.2},
+        "class_imbalance": {"strategy": "none"},
+        "batch_size": 16,
+        "shuffle_buffer": 64,
+        "dropout": 0.3,
+        "epochs": 1,
+        "learning_rate": 0.001,
+        "early_stopping": {"monitor": "val_loss", "patience": 1},
+        "output_dir": str(tmp_path),
+        "save_weights": False,
+        "subset_size": None,
+    }
+
+
+def test_train_from_config_multiclass_coarse_smoke_runs_and_writes_artifacts(
+    synthetic_cifar100, tmp_path: Path
+):
+    (x_tr, yf_tr, yc_tr), (x_te, yf_te, yc_te) = synthetic_cifar100
+    train_split = _synthetic_split(x_tr, yf_tr, yc_tr, "train")
+    test_split = _synthetic_split(x_te, yf_te, yc_te, "test")
+
+    config = _multiclass_config(tmp_path, run_name="mc_coarse")
+    history, metrics = train_from_config(
+        config, train_split=train_split, test_split=test_split
+    )
+
+    run_dir = tmp_path / "mc_coarse"
+    assert (run_dir / "config.yaml").exists()
+    assert (run_dir / "class_balance.json").exists()
+    assert (run_dir / "history.json").exists()
+    assert (run_dir / "metrics.json").exists()
+    assert not (run_dir / "weights.h5").exists()
+
+    # history has loss recorded
+    assert "loss" in history
+
+    saved_metrics = json.loads((run_dir / "metrics.json").read_text())
+
+    # Required multiclass keys
+    for key in ("macro_f1", "weighted_f1", "confusion_matrix", "class_counts"):
+        assert key in saved_metrics, f"Missing key: {key}"
+
+    # top_3_accuracy: C=20 so k=3 <= 20 — must be present
+    assert "top_3_accuracy" in saved_metrics
+
+    # Binary-specific keys must NOT be present
+    assert "threshold" not in saved_metrics
+    assert "validation_threshold_metrics" not in saved_metrics
+
+    # class_balance has all three splits with per-class counts (20 classes)
+    balance = json.loads((run_dir / "class_balance.json").read_text())
+    assert set(balance.keys()) == {"train", "val", "test"}
+    # Coarse: 20 classes → keys "0".."19"
+    for split_name in ("train", "val", "test"):
+        assert len(balance[split_name]) == 20
+
+
+def test_train_from_config_multiclass_run_dir_does_not_collide_with_binary(
+    synthetic_cifar100, tmp_path: Path
+):
+    (x_tr, yf_tr, yc_tr), (x_te, yf_te, yc_te) = synthetic_cifar100
+    train_split = _synthetic_split(x_tr, yf_tr, yc_tr, "train")
+    test_split = _synthetic_split(x_te, yf_te, yc_te, "test")
+
+    binary_config = {
+        "architecture": "baseline_cnn",
+        "run_name": "binary_smoke",
+        "seed": 42,
+        "task": {
+            "type": "binary",
+            "label_level": "coarse",
+            "positive_label_names": ["aquatic_mammals"],
+        },
+        "validation": {"fraction": 0.2, "stratify": True},
+        "class_imbalance": {"strategy": "none"},
+        "batch_size": 16,
+        "shuffle_buffer": 64,
+        "dropout": 0.3,
+        "epochs": 1,
+        "learning_rate": 0.001,
+        "early_stopping": {"monitor": "val_loss", "patience": 1},
+        "output_dir": str(tmp_path),
+        "save_weights": False,
+        "subset_size": None,
+    }
+    multiclass_config = _multiclass_config(tmp_path, run_name="multiclass_smoke")
+
+    train_from_config(binary_config, train_split=train_split, test_split=test_split)
+    train_from_config(multiclass_config, train_split=train_split, test_split=test_split)
+
+    assert (tmp_path / "binary_smoke").exists()
+    assert (tmp_path / "multiclass_smoke").exists()
+
+
+def test_get_loss_multiclass_returns_sparse_categorical_crossentropy():
+    loss = get_loss("multiclass")
+    assert isinstance(loss, tf.keras.losses.SparseCategoricalCrossentropy)
+    assert loss.get_config()["from_logits"] is False
