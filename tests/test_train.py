@@ -146,6 +146,7 @@ def test_maybe_load_initial_weights_raises_when_path_missing(tmp_path: Path):
             mock_model, {"initial_weights": str(tmp_path / "missing.h5")}
         )
     mock_model.load_weights.assert_not_called()
+    mock_model.load_weights.assert_not_called()
 
 
 def test_train_from_config_spies_load_weights_with_initial_weights(
@@ -156,7 +157,6 @@ def test_train_from_config_spies_load_weights_with_initial_weights(
     method captures the call without depending on a real .h5 file.
     """
     captured: list[str] = []
-    original = tf.keras.Model.load_weights
 
     def spy(self, filepath, *args, **kwargs):
         captured.append(str(filepath))
