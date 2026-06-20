@@ -1,53 +1,57 @@
-"""Callbacks for training: early stopping, metrics logging, etc."""
+"""Callbacks for training: early stopping, CSV history, JSON history."""
 
-import tensorflow as tf
-from tensorflow.keras.callbacks import Callback, EarlyStopping, CSVLogger
 import json
 from pathlib import Path
+from typing import Union
+
+import tensorflow as tf
+
+Callback = tf.keras.callbacks.Callback
+CSVLogger = tf.keras.callbacks.CSVLogger
+EarlyStopping = tf.keras.callbacks.EarlyStopping
 
 
 class JSONLogger(Callback):
-    """
-    Log metrics to a JSON file after each epoch.
+    """Append per-epoch metrics to an in-memory dict and rewrite a JSON file.
 
-    Useful for tracking metrics in a format that's easy to parse post-training.
+    Useful for downstream summaries that prefer JSON over CSV (e.g. result
+    aggregation across runs). The full history is rewritten every epoch so a
+    partial run still leaves a readable file.
     """
 
-    def __init__(self, filepath: str, **kwargs):
-        """
-        Args:
-            filepath: Path to save JSON file.
-        """
+    def __init__(self, filepath: Union[str, Path], **kwargs):
         super().__init__(**kwargs)
         self.filepath = Path(filepath)
-        self.history = {}
+        self.history: dict[str, list[float]] = {}
 
     def on_epoch_end(self, epoch, logs=None):
-        """Record epoch metrics to history."""
-        # TODO: Implement JSON logging.
-        # Append epoch metrics to self.history and write to self.filepath.
-        raise NotImplementedError("JSONLogger.on_epoch_end not yet implemented")
+        logs = logs or {}
+        for k, v in logs.items():
+            self.history.setdefault(k, []).append(float(v))
+        self.filepath.parent.mkdir(parents=True, exist_ok=True)
+        with self.filepath.open("w") as f:
+            json.dump(self.history, f, indent=2)
 
 
 def get_callbacks(
-    output_dir: str,
+    output_dir: Union[str, Path],
+    *,
     patience: int = 5,
     monitor: str = "val_loss",
-) -> list:
-    """
-    Get a list of callbacks for training.
+) -> list[Callback]:
+    """Build the standard training callback list.
 
-    Args:
-        output_dir: Directory to save callback outputs.
-        patience: Early stopping patience.
-        monitor: Metric to monitor for early stopping.
-
-    Returns:
-        List of `keras.callbacks.Callback` instances.
+    EarlyStopping restores best weights so the final saved model corresponds
+    to the best monitored epoch, not the last one.
     """
-    # TODO: Implement callback construction.
-    # - EarlyStopping(monitor=monitor, patience=patience, restore_best_weights=True)
-    # - CSVLogger (optional)
-    # - JSONLogger
-    # Return list of callbacks.
-    raise NotImplementedError("get_callbacks not yet implemented")
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    return [
+        EarlyStopping(
+            monitor=monitor,
+            patience=patience,
+            restore_best_weights=True,
+        ),
+        CSVLogger(str(output_dir / "history.csv")),
+        JSONLogger(output_dir / "history.json"),
+    ]

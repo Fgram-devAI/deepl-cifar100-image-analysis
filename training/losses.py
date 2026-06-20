@@ -1,26 +1,29 @@
-"""Loss functions for binary and multiclass tasks."""
+"""Loss functions for CIFAR-100 binary and multiclass tasks."""
 
-from typing import Literal
 import tensorflow as tf
-from tensorflow.keras.losses import Loss
+
+BinaryCrossentropy = tf.keras.losses.BinaryCrossentropy
+Loss = tf.keras.losses.Loss
+SparseCategoricalCrossentropy = tf.keras.losses.SparseCategoricalCrossentropy
 
 
 def get_loss(head: str = "binary") -> Loss:
-    """
-    Get the appropriate loss function for the output head.
+    """Return the Keras loss for the chosen output head.
 
     Args:
-        head: "binary" or "multiclass".
+        head: Either ``"binary"`` (sigmoid + BinaryCrossentropy) or
+              ``"multiclass"`` (softmax + SparseCategoricalCrossentropy).
 
     Returns:
-        A `keras.Loss` instance.
+        A compiled Keras Loss instance configured with ``from_logits=False``.
 
-    Notes:
-        - Binary: sigmoid + BinaryCrossentropy
-        - Multiclass (10-class): softmax + SparseCategoricalCrossentropy or CategoricalCrossentropy
+    Raises:
+        ValueError: If ``head`` is not ``"binary"`` or ``"multiclass"``.
     """
-    # TODO: Implement loss selection.
-    # Binary: BinaryCrossentropy (from_logits=False if already sigmoid-applied in model)
-    # Multiclass: SparseCategoricalCrossentropy or CategoricalCrossentropy
-    # Return the selected loss.
-    raise NotImplementedError("get_loss not yet implemented")
+    if head == "binary":
+        return BinaryCrossentropy(from_logits=False)
+    if head == "multiclass":
+        return SparseCategoricalCrossentropy(from_logits=False)
+    raise ValueError(
+        f"head must be 'binary' or 'multiclass'; got {head!r}"
+    )

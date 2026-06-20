@@ -2,8 +2,9 @@
 
 from typing import Literal, Optional
 import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers
+
+keras = tf.keras
+layers = tf.keras.layers
 
 
 def build_rnn(

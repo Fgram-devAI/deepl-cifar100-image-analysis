@@ -1,0 +1,53 @@
+# Baseline CNN configuration for a CIFAR-100 binary task.
+#
+# Selected task: fine-label `cow` vs. rest. Switch `task.label_level` to
+# `coarse` and pick a superclass name (e.g. `aquatic_mammals`) to run the
+# superclass-vs-rest baseline.
+
+architecture: baseline_cnn
+run_name: baseline_cnn_cow_lr_3e-5_40_ep
+
+# Reproducibility
+seed: 42
+
+# Task selection
+task:
+  type: binary
+  label_level: fine
+  positive_label_names:
+    - cow
+
+# Train/validation split (CIFAR-100 train -> train + val)
+validation:
+  fraction: 0.1
+  stratify: true
+
+# Class imbalance handling
+class_imbalance:
+  strategy: class_weights   # "class_weights" or "none"
+
+# Pipeline
+batch_size: 64
+shuffle_buffer: 4096
+
+# Model
+dropout: 0.3
+
+# Training
+epochs: 40
+optimizer: adam
+learning_rate: 3e-5
+gradient_clipnorm: 1.0
+early_stopping:
+  monitor: val_loss
+  patience: 5
+
+# Output
+output_dir: results/binary/fine/cow
+save_weights: true
+
+# Optional dev override: set to a positive int for a smoke run on a stratified
+# subset of the selected binary task; leave null for the full split.
+# For fine-class-vs-rest tasks, avoid naive head slicing because it can produce
+# a subset with zero positives.
+subset_size: null

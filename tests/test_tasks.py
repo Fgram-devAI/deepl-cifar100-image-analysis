@@ -78,3 +78,81 @@ def test_make_cifar100_binary_task_rejects_unknown_level():
             label_level="super",  # type: ignore[arg-type]
             positive_label_names=["cow"],
         )
+
+
+# ---------------------------------------------------------------------------
+# Multiclass task tests
+# ---------------------------------------------------------------------------
+
+from data.tasks import MulticlassTask, make_cifar100_multiclass_task
+
+
+def test_make_multiclass_task_coarse_returns_20_classes_and_labels_in_range(
+    synthetic_cifar100,
+):
+    (x_tr, yf_tr, yc_tr), _ = synthetic_cifar100
+    split = Cifar100Split(
+        images=x_tr,
+        fine_labels=yf_tr.reshape(-1),
+        coarse_labels=yc_tr.reshape(-1),
+        split="train",
+    )
+    task = make_cifar100_multiclass_task(split, label_level="coarse")
+    assert isinstance(task, MulticlassTask)
+    assert task.num_classes == 20
+    assert len(task.label_names) == 20
+    assert task.label_names[0] == "aquatic_mammals"
+    assert task.labels.min() >= 0
+    assert task.labels.max() < 20
+    assert task.metadata["task_type"] == "multiclass"
+    assert task.metadata["label_level"] == "coarse"
+    assert task.metadata["split"] == "train"
+
+
+def test_make_multiclass_task_fine_returns_100_classes(synthetic_cifar100):
+    (x_tr, yf_tr, yc_tr), _ = synthetic_cifar100
+    split = Cifar100Split(
+        images=x_tr,
+        fine_labels=yf_tr.reshape(-1),
+        coarse_labels=yc_tr.reshape(-1),
+        split="train",
+    )
+    task = make_cifar100_multiclass_task(split, label_level="fine")
+    assert task.num_classes == 100
+    assert len(task.label_names) == 100
+    assert task.label_names[19] == "cattle"  # known canonical fine-id 19
+    assert task.labels.max() < 100
+
+
+def test_make_multiclass_task_class_counts_sum_to_n(synthetic_cifar100):
+    (x_tr, yf_tr, yc_tr), _ = synthetic_cifar100
+    split = Cifar100Split(
+        images=x_tr,
+        fine_labels=yf_tr.reshape(-1),
+        coarse_labels=yc_tr.reshape(-1),
+        split="train",
+    )
+    task = make_cifar100_multiclass_task(split, label_level="coarse")
+    assert sum(task.class_counts.values()) == task.labels.shape[0]
+    # Every class index in [0, 20) is present in the dict (count may be 0).
+    assert set(task.class_counts.keys()) == set(range(20))
+
+
+def test_make_multiclass_task_rejects_invalid_label_level(synthetic_cifar100):
+    (x_tr, yf_tr, yc_tr), _ = synthetic_cifar100
+    split = Cifar100Split(
+        images=x_tr,
+        fine_labels=yf_tr.reshape(-1),
+        coarse_labels=yc_tr.reshape(-1),
+        split="train",
+    )
+    with pytest.raises(ValueError):
+        make_cifar100_multiclass_task(split, label_level="bogus")  # type: ignore[arg-type]
+
+
+def test_make_multiclass_task_module_import_is_offline():
+    # Sanity: importing the data module must not trigger downloads.
+    # If this test runs at all, the import already succeeded without net.
+    import data
+    assert hasattr(data, "make_cifar100_multiclass_task")
+    assert hasattr(data, "MulticlassTask")

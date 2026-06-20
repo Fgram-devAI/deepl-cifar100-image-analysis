@@ -96,7 +96,7 @@ def _load_cifar100_huggingface(
         except ImportError as exc:
             raise ImportError(
                 "Hugging Face loading requires the `datasets` package. "
-                "Install it with `pip install -r requirements-hf.txt`."
+                "Install it with `pip install -r requirements.txt`."
             ) from exc
 
         rows = load_dataset("uoft-cs/cifar100", split=split)

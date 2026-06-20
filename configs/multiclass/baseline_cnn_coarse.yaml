@@ -1,0 +1,30 @@
+architecture: baseline_cnn
+run_name: baseline_cnn_lr_1e-5_clipnorm_1.0
+seed: 42
+
+task:
+  type: multiclass
+  label_level: coarse
+
+validation:
+  fraction: 0.1
+  stratify: false
+
+class_imbalance:
+  strategy: none
+
+batch_size: 64
+shuffle_buffer: 4096
+dropout: 0.3
+epochs: 50
+optimizer: adam
+learning_rate: 1e-5
+gradient_clipnorm: 1.0
+
+early_stopping:
+  monitor: val_loss
+  patience: 5
+
+output_dir: results/coarse_multiclass
+save_weights: true
+subset_size: null

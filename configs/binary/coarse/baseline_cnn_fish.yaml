@@ -1,0 +1,32 @@
+architecture: baseline_cnn
+run_name: baseline_cnn_fish_lr_3e-5_30_ep_grad_clipnorm_1.0
+seed: 42
+
+task:
+  type: binary
+  label_level: coarse
+  positive_label_names:
+    - fish
+
+validation:
+  fraction: 0.1
+  stratify: true
+
+class_imbalance:
+  strategy: class_weights
+
+batch_size: 64
+shuffle_buffer: 4096
+dropout: 0.3
+epochs: 30
+optimizer: adam
+learning_rate: 3e-5
+grad_clip_norm: 1.0
+
+early_stopping:
+  monitor: val_loss
+  patience: 5
+
+output_dir: results/binary/coarse/fish
+save_weights: true
+subset_size: null

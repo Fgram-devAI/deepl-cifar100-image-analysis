@@ -1,0 +1,29 @@
+architecture: baseline_cnn
+run_name: baseline_cnn_lr_3e-5
+seed: 42
+
+task:
+  type: multiclass
+  label_level: fine
+
+validation:
+  fraction: 0.1
+  stratify: false
+
+class_imbalance:
+  strategy: none
+
+batch_size: 64
+shuffle_buffer: 4096
+dropout: 0.3
+epochs: 60
+optimizer: adam
+learning_rate: 3e-5
+
+early_stopping:
+  monitor: val_loss
+  patience: 5
+
+output_dir: results/fine_multiclass
+save_weights: true
+subset_size: null

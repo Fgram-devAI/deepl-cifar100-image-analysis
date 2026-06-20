@@ -1,0 +1,31 @@
+architecture: baseline_cnn
+run_name: baseline_cnn_aquatic_mammals_lr_3e-5_30_ep_dropout_0.4
+seed: 42
+
+task:
+  type: binary
+  label_level: coarse
+  positive_label_names:
+    - aquatic_mammals
+
+validation:
+  fraction: 0.1
+  stratify: true
+
+class_imbalance:
+  strategy: class_weights
+
+batch_size: 64
+shuffle_buffer: 4096
+dropout: 0.4
+epochs: 30
+optimizer: adam
+learning_rate: 3e-5
+
+early_stopping:
+  monitor: val_loss
+  patience: 5
+
+output_dir: results/binary/coarse/aquatic_mammals
+save_weights: true
+subset_size: null

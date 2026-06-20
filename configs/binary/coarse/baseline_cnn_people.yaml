@@ -1,0 +1,32 @@
+architecture: baseline_cnn
+run_name: baseline_cnn_people_lr_3e-5_40_ep
+seed: 42
+
+task:
+  type: binary
+  label_level: coarse
+  positive_label_names:
+    - people
+
+validation:
+  fraction: 0.1
+  stratify: true
+
+class_imbalance:
+  strategy: class_weights
+
+batch_size: 64
+shuffle_buffer: 4096
+dropout: 0.3
+epochs: 40
+optimizer: adam
+learning_rate: 3e-5
+
+
+early_stopping:
+  monitor: val_loss
+  patience: 5
+
+output_dir: results/binary/coarse/people
+save_weights: true
+subset_size: null

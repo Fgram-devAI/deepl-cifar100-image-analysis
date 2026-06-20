@@ -54,16 +54,10 @@ either deactivate Conda first or make sure `which python` points inside `./venv/
 
 ### Dependencies
 
-For the core project environment:
+For the core project environment, including tests, notebooks, and Hugging Face dataset loading:
 
 ```bash
 pip install -r requirements.txt
-```
-
-For Hugging Face dataset fetching:
-
-```bash
-pip install -r requirements-hf.txt
 ```
 
 For Apple Silicon Macs, use the macOS overlay to include TensorFlow Metal acceleration:
@@ -93,8 +87,23 @@ venv/bin/python data/loaders.py --source keras --split both
 # Data pipeline checks
 venv/bin/pytest -q tests/test_preprocessing.py tests/test_labels.py tests/test_loaders.py tests/test_tasks.py tests/test_pipeline.py tests/test_acceptance.py
 
-# Single training run with a given config
-python -m training.train --config configs/lstm.yaml
+# Baseline CNN binary task (fine `cow` vs. rest, default config)
+venv/bin/python -m training.train --config configs/binary/fine/baseline_cnn_cow.yaml
+
+# Baseline CNN binary coarse task (aquatic_mammals vs. rest)
+venv/bin/python -m training.train --config configs/binary/coarse/baseline_cnn_aquatic_mammals.yaml
+
+# Baseline CNN binary coarse task (flowers vs. rest)
+venv/bin/python -m training.train --config configs/binary/coarse/baseline_cnn_flowers.yaml
+
+# Baseline CNN coarse multiclass (20 superclasses)
+venv/bin/python -m training.train --config configs/multiclass/baseline_cnn_coarse.yaml
+
+# Baseline CNN fine multiclass (100 classes; longer run)
+venv/bin/python -m training.train --config configs/multiclass/baseline_cnn_fine.yaml
+
+# Summarize the results/ directory into a CSV
+venv/bin/python -m evaluation.summarize_results --results-dir results --output results/summary.csv
 
 # Full ablation sweep on the configured subset/task
 python -m experiments.run_ablations
