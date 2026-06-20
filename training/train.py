@@ -2,8 +2,11 @@
 
 import argparse
 import json
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
+
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "1")
 
 import numpy as np
 import tensorflow as tf

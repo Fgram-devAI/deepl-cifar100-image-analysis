@@ -1,9 +1,9 @@
 # Baseline CNN — fine-label `orange` vs. rest, with light augmentation.
-# Base: baseline_cnn_orange_lr_1e-5_30_ep. New: augmentation block only.
+# Base: baseline_cnn_orange_lr_1e-5_40_ep. New: augmentation block only.
 # Writes to the same output_dir so results can be compared directly.
 
 architecture: baseline_cnn
-run_name: baseline_cnn_orange_lr_1e-5_30_ep_aug_light
+run_name: baseline_cnn_orange_lr_1e-5_40_ep_aug_light
 
 seed: 42
 
@@ -25,7 +25,7 @@ shuffle_buffer: 4096
 
 dropout: 0.3
 
-epochs: 30
+epochs: 40
 optimizer: adam
 learning_rate: 1e-5
 early_stopping:
