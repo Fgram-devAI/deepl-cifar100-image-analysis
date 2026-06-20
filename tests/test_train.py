@@ -6,7 +6,6 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 import tensorflow as tf
-import yaml
 
 from data import Cifar100Split
 from training.train import _build_model, load_config, train_from_config
