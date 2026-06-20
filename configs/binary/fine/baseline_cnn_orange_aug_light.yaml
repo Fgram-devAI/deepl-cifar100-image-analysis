@@ -1,0 +1,46 @@
+# Baseline CNN — fine-label `orange` vs. rest, with light augmentation.
+# Base: baseline_cnn_orange_lr_1e-5_30_ep. New: augmentation block only.
+# Writes to the same output_dir so results can be compared directly.
+
+architecture: baseline_cnn
+run_name: baseline_cnn_orange_lr_1e-5_30_ep_aug_light
+
+seed: 42
+
+task:
+  type: binary
+  label_level: fine
+  positive_label_names:
+    - orange
+
+validation:
+  fraction: 0.1
+  stratify: true
+
+class_imbalance:
+  strategy: class_weights
+
+batch_size: 64
+shuffle_buffer: 4096
+
+dropout: 0.3
+
+epochs: 30
+optimizer: adam
+learning_rate: 1e-5
+early_stopping:
+  monitor: val_loss
+  patience: 5
+
+output_dir: results/binary/fine/orange
+save_weights: true
+
+subset_size: null
+
+augmentation:
+  enabled: true
+  horizontal_flip: true
+  translation: 0.05
+  zoom: 0.05
+  rotation: 0.0
+  contrast: 0.0

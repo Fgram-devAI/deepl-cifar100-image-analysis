@@ -46,6 +46,7 @@ def _build_model(config: Dict[str, Any], *, num_classes: int = 1) -> tf.keras.Mo
     return build_baseline_cnn(
         dropout=float(config.get("dropout", 0.3)),
         num_classes=num_classes,
+        augmentation=config.get("augmentation"),
     )
 
 
