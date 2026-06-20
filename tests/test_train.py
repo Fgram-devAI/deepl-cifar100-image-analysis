@@ -6,9 +6,10 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 import tensorflow as tf
+import yaml
 
 from data import Cifar100Split
-from training.train import _build_model, train_from_config
+from training.train import _build_model, load_config, train_from_config
 
 
 def test_build_model_wires_enabled_augmentation_config():
@@ -291,3 +292,33 @@ def test_initial_weights_missing_path_raises_file_not_found(tmp_path: Path):
             train_split=_tiny_split(seed=1),
             test_split=_tiny_split(seed=2),
         )
+
+
+# ---------------------------------------------------------------------------
+# Task 4: ResNet-family recommended-experiment YAML configs + routing test
+# ---------------------------------------------------------------------------
+
+_RESNET_FAMILY_CONFIGS = [
+    "configs/transfer/resnet_family/binary/coarse/resnet50v2_food_containers.yaml",
+    "configs/transfer/resnet_family/binary/fine/resnet50v2_skyscraper.yaml",
+    "configs/transfer/resnet_family/binary/fine/resnet50v2_orange.yaml",
+    "configs/transfer/resnet_family/multiclass/resnet50v2_coarse.yaml",
+    "configs/transfer/resnet_family/binary/fine/resnet50v2_skyscraper_finetune.yaml",
+    "configs/transfer/resnet_family/binary/fine/densenet121_skyscraper.yaml",
+]
+
+
+@pytest.mark.parametrize("config_path", _RESNET_FAMILY_CONFIGS)
+def test_resnet_family_config_parses_and_routes_to_builder(config_path):
+    config = load_config(config_path)
+    assert config["architecture"] == "resnet_family"
+    assert config["backbone_name"] in {
+        "resnet50v2", "resnet101v2", "resnet152v2", "densenet121",
+    }
+
+    # Override weights to None so the test does not hit the network.
+    config["weights"] = None
+
+    num_classes = 1 if config["task"]["type"] == "binary" else 20
+    model = _build_model(config, num_classes=num_classes)
+    assert model.name.endswith("_transfer")

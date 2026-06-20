@@ -1,0 +1,38 @@
+# Transfer-learning ResNet50V2, frozen backbone, on fine class `skyscraper`.
+
+architecture: resnet_family
+backbone_name: resnet50v2
+run_name: resnet50v2_skyscraper_frozen
+seed: 42
+
+resize_to: 224
+trainable_backbone: false
+dropout: 0.2
+weights: imagenet
+
+task:
+  type: binary
+  label_level: fine
+  positive_label_names:
+    - skyscraper
+
+validation:
+  fraction: 0.1
+  stratify: true
+
+class_imbalance:
+  strategy: class_weights
+
+batch_size: 32
+shuffle_buffer: 4096
+
+epochs: 20
+optimizer: adam
+learning_rate: 1e-4
+early_stopping:
+  monitor: val_loss
+  patience: 5
+
+output_dir: results/transfer/resnet_family/binary/fine/skyscraper
+save_weights: true
+subset_size: null

@@ -1,0 +1,41 @@
+# Transfer-learning ResNet50V2, frozen backbone, on the food_containers superclass.
+# Mirrors configs/binary/coarse/baseline_cnn_food_containers.yaml for direct comparison.
+
+architecture: resnet_family
+backbone_name: resnet50v2
+run_name: resnet50v2_food_containers_frozen
+seed: 42
+
+# Transfer-learning specific
+resize_to: 224
+trainable_backbone: false
+dropout: 0.2
+weights: imagenet
+
+# Task selection
+task:
+  type: binary
+  label_level: coarse
+  positive_label_names:
+    - food_containers
+
+validation:
+  fraction: 0.1
+  stratify: true
+
+class_imbalance:
+  strategy: class_weights
+
+batch_size: 32
+shuffle_buffer: 4096
+
+epochs: 20
+optimizer: adam
+learning_rate: 1e-4
+early_stopping:
+  monitor: val_loss
+  patience: 5
+
+output_dir: results/transfer/resnet_family/binary/coarse/food_containers
+save_weights: true
+subset_size: null

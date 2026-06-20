@@ -1,0 +1,43 @@
+# Phase 2: load frozen-run weights and fine-tune the top backbone layers.
+# Run the frozen config (resnet50v2_skyscraper.yaml) first to produce
+# results/transfer/resnet_family/binary/fine/skyscraper/resnet50v2_skyscraper_frozen/weights.h5
+# then run this config.
+
+architecture: resnet_family
+backbone_name: resnet50v2
+run_name: resnet50v2_skyscraper_finetune
+seed: 42
+
+resize_to: 224
+trainable_backbone: true
+fine_tune_at: 150
+dropout: 0.2
+weights: imagenet
+initial_weights: results/transfer/resnet_family/binary/fine/skyscraper/resnet50v2_skyscraper_frozen/weights.h5
+
+task:
+  type: binary
+  label_level: fine
+  positive_label_names:
+    - skyscraper
+
+validation:
+  fraction: 0.1
+  stratify: true
+
+class_imbalance:
+  strategy: class_weights
+
+batch_size: 32
+shuffle_buffer: 4096
+
+epochs: 10
+optimizer: adam
+learning_rate: 1e-5
+early_stopping:
+  monitor: val_loss
+  patience: 3
+
+output_dir: results/transfer/resnet_family/binary/fine/skyscraper
+save_weights: true
+subset_size: null
