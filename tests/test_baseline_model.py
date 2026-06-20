@@ -102,3 +102,9 @@ def test_baseline_cnn_augmentation_preserves_multiclass_output_shape():
     aug_cfg = {"enabled": True, "horizontal_flip": True, "translation": 0.05}
     model = build_baseline_cnn(num_classes=20, augmentation=aug_cfg)
     assert model.output_shape == (None, 20)
+
+
+def test_baseline_cnn_disabled_augmentation_config_has_no_augmentation_layer():
+    model = build_baseline_cnn(augmentation={"enabled": False})
+    layer_names = [l.name for l in model.layers]
+    assert "augmentation" not in layer_names
