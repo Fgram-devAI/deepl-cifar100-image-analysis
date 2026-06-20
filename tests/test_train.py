@@ -1,6 +1,7 @@
 """Unit tests for the training.train module."""
 
 import pytest
+import tensorflow as tf
 
 from training.train import _build_model
 
@@ -79,6 +80,5 @@ def test_build_model_resnet_family_propagates_fine_tune_at():
         },
         num_classes=1,
     )
-    import tensorflow as tf
     backbone = [l for l in model.layers if isinstance(l, tf.keras.Model)][0]
     assert all(not l.trainable for l in backbone.layers[:50])
