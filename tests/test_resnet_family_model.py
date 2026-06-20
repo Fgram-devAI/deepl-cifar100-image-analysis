@@ -115,6 +115,18 @@ def test_trainable_backbone_marks_backbone_trainable():
     )
     backbones = [l for l in model.layers if isinstance(l, tf.keras.Model)]
     assert backbones[0].trainable is True
+    # Model-level flag is necessary but not sufficient: verify that at least one
+    # non-BN layer inside the backbone is individually trainable.  A regression
+    # where the BN sweep accidentally freezes non-BN layers would fail here.
+    backbone = backbones[0]
+    non_bn_trainable = [
+        l for l in backbone.layers
+        if not isinstance(l, tf.keras.layers.BatchNormalization) and l.trainable
+    ]
+    assert non_bn_trainable, (
+        "expected at least one non-BatchNorm backbone layer to be trainable "
+        "when trainable_backbone=True"
+    )
 
 
 def test_fine_tune_at_freezes_layers_before_index():

@@ -97,6 +97,7 @@ def build_resnet_family_model(
                 layer.trainable = False
 
     inputs = keras.Input(shape=input_shape, name="image")
+    # Upstream pipeline yields [0, 1]; multiply by 255 so preprocess_input receives [0, 255].
     x = layers.Rescaling(255.0, name="rescale_to_0_255")(inputs)
     x = layers.Resizing(resize_to, resize_to, name="resize")(x)
     x = layers.Lambda(preprocess_input, name="preprocess_input")(x)
