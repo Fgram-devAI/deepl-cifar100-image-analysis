@@ -250,3 +250,25 @@ def test_resnet50v2_uses_resnet_v2_preprocess_input_in_graph():
     )
     lambdas = [l for l in model.layers if isinstance(l, tf.keras.layers.Lambda)]
     assert lambdas, "expected a Lambda(preprocess_input) layer"
+
+
+def test_fine_tune_at_negative_raises_value_error():
+    with pytest.raises(ValueError, match="fine_tune_at"):
+        build_resnet_family_model(
+            backbone_name="resnet50v2",
+            num_classes=1,
+            trainable_backbone=True,
+            fine_tune_at=-1,
+            weights=None,
+        )
+
+
+def test_fine_tune_at_above_layer_count_raises_value_error():
+    with pytest.raises(ValueError, match="fine_tune_at"):
+        build_resnet_family_model(
+            backbone_name="resnet50v2",
+            num_classes=1,
+            trainable_backbone=True,
+            fine_tune_at=10_000,
+            weights=None,
+        )

@@ -67,7 +67,14 @@ def build_resnet_family_model(
         weights: `"imagenet"` or `None` (testing/offline).
 
     Raises:
-        ValueError: If `backbone_name` is unsupported or `num_classes < 1`.
+        ValueError: If `backbone_name` is unsupported, `num_classes < 1`, or
+            `fine_tune_at` is out of range.
+
+    Note:
+        The graph includes a ``Lambda(preprocess_input)`` layer, so use
+        ``model.save_weights(...)`` / ``model.load_weights(...)`` for
+        persistence. Full-model save via ``model.save(...)`` or
+        ``tf.keras.models.load_model(...)`` will fail to round-trip the Lambda.
     """
     if backbone_name not in _BACKBONE_REGISTRY:
         raise ValueError(
@@ -84,6 +91,17 @@ def build_resnet_family_model(
         weights=weights,
         input_shape=(resize_to, resize_to, 3),
     )
+
+    if fine_tune_at is not None:
+        if fine_tune_at < 0:
+            raise ValueError(
+                f"fine_tune_at must be non-negative; got {fine_tune_at}"
+            )
+        if fine_tune_at >= len(backbone.layers):
+            raise ValueError(
+                f"fine_tune_at must be less than the backbone layer count "
+                f"{len(backbone.layers)}; got {fine_tune_at}"
+            )
 
     if not trainable_backbone:
         backbone.trainable = False

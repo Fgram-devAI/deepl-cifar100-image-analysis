@@ -146,7 +146,6 @@ def test_maybe_load_initial_weights_raises_when_path_missing(tmp_path: Path):
             mock_model, {"initial_weights": str(tmp_path / "missing.h5")}
         )
     mock_model.load_weights.assert_not_called()
-    mock_model.load_weights.assert_not_called()
 
 
 def test_train_from_config_spies_load_weights_with_initial_weights(
