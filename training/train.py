@@ -26,6 +26,7 @@ from evaluation.metrics import (
     find_best_threshold,
 )
 from models.baseline import build_baseline_cnn
+from models.resnet_family import build_resnet_family_model
 from training.callbacks import get_callbacks
 from training.class_weights import compute_balanced_class_weights
 from training.losses import get_loss
@@ -41,15 +42,30 @@ def load_config(config_path) -> Dict[str, Any]:
 
 def _build_model(config: Dict[str, Any], *, num_classes: int = 1) -> tf.keras.Model:
     architecture = config.get("architecture", "baseline_cnn")
-    if architecture != "baseline_cnn":
-        raise ValueError(
-            f"This branch only ships the 'baseline_cnn' architecture; "
-            f"got {architecture!r}"
+    if architecture == "baseline_cnn":
+        return build_baseline_cnn(
+            dropout=float(config.get("dropout", 0.3)),
+            num_classes=num_classes,
+            augmentation=config.get("augmentation"),
         )
-    return build_baseline_cnn(
-        dropout=float(config.get("dropout", 0.3)),
-        num_classes=num_classes,
-        augmentation=config.get("augmentation"),
+    if architecture == "resnet_family":
+        if "backbone_name" not in config:
+            raise KeyError(
+                "resnet_family architecture requires a 'backbone_name' key "
+                "in the config (e.g. 'resnet50v2')."
+            )
+        return build_resnet_family_model(
+            backbone_name=str(config["backbone_name"]),
+            num_classes=num_classes,
+            resize_to=int(config.get("resize_to", 224)),
+            dropout=float(config.get("dropout", 0.2)),
+            trainable_backbone=bool(config.get("trainable_backbone", False)),
+            fine_tune_at=config.get("fine_tune_at"),
+            weights=config.get("weights", "imagenet"),
+        )
+    raise ValueError(
+        f"Unsupported architecture {architecture!r}. "
+        "Supported: 'baseline_cnn', 'resnet_family'."
     )
 
 
