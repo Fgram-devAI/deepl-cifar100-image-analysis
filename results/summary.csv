@@ -1,0 +1,2 @@
+task_name,run_name,task_type,label_level,target_labels,accuracy,precision,recall,f1,roc_auc,pr_auc,threshold,top_3_accuracy,top_5_accuracy,macro_f1,weighted_f1
+efficientnet_b0_coarse,efficientnet_b0_coarse_lr_1e-3_epochs_10,multiclass,coarse,,0.7396,,,,,,,0.9129,0.958,0.7385248661797552,0.7385248661797552

@@ -1,0 +1,24 @@
+architecture: efficientnet_b0
+run_name: efficientnet_b0_coarse_lr_1e-3_epochs_10
+seed: 42
+task:
+  type: multiclass
+  label_level: coarse
+validation:
+  fraction: 0.1
+class_imbalance:
+  strategy: none
+batch_size: 32
+shuffle_buffer: 4096
+dropout: 0.3
+epochs: 10
+optimizer: adam
+learning_rate: 1e-3
+freeze_backbone: true
+input_size: 96
+early_stopping:
+  monitor: val_loss
+  patience: 5
+output_dir: results/efficientnet_b0_coarse
+save_weights: true
+subset_size: null
