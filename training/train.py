@@ -27,6 +27,7 @@ from evaluation.metrics import (
 )
 from models.baseline import build_baseline_cnn
 from models.efficientnet_b0 import build_efficientnet_b0
+from models.efficientnet_b3_fine import build_efficientnet_b3
 from training.callbacks import get_callbacks
 from training.class_weights import compute_balanced_class_weights
 from training.losses import get_loss
@@ -56,6 +57,16 @@ def _build_model(config: Dict[str, Any], *, num_classes: int = 1) -> tf.keras.Mo
             unfreeze_from=config.get("unfreeze_from"),
             freeze_bn=bool(config.get("freeze_bn", True)),
             input_size=int(config.get("input_size", 96)),
+            augmentation=config.get("augmentation"),
+        )
+    if architecture == "efficientnet_b3":
+        return build_efficientnet_b3(
+            dropout=float(config.get("dropout", 0.3)),
+            num_classes=num_classes,
+            freeze_backbone=bool(config.get("freeze_backbone", True)),
+            unfreeze_from=config.get("unfreeze_from"),
+            freeze_bn=bool(config.get("freeze_bn", True)),
+            input_size=int(config.get("input_size", 160)),
             augmentation=config.get("augmentation"),
         )
     raise ValueError(
