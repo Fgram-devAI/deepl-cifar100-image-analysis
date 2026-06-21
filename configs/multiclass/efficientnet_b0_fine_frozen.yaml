@@ -1,0 +1,40 @@
+
+architecture: efficientnet_b0
+run_name: efficientnet_b0_fine_frozen_in128_ep30
+seed: 42
+
+task:
+  type: multiclass
+  label_level: fine          # <-- 100 classes (was: coarse / 20)
+
+validation:
+  fraction: 0.1
+
+class_imbalance:
+  strategy: none             # CIFAR-100 is balanced (500/class)
+
+batch_size: 64
+shuffle_buffer: 4096
+dropout: 0.4                 # a touch higher for the harder 100-class task
+epochs: 30                  # was 10
+optimizer: adam
+learning_rate: 1e-3         # ok while the backbone is FROZEN
+
+freeze_backbone: true       # this config keeps it frozen (the "better baseline")
+input_size: 128             # was 96; try 160 if the GPU allows (drop batch_size to 32)
+
+augmentation:               # exact keys expected by models/augmentation.py
+  enabled: true             # REQUIRED — without this the whole block is ignored
+  horizontal_flip: true
+  translation: 0.1
+  zoom: 0.1
+  rotation: 0.05
+  contrast: 0.1
+
+early_stopping:
+  monitor: val_loss
+  patience: 8               # was 5
+
+output_dir: results/efficientnet_b0_fine_frozen
+save_weights: true
+subset_size: null

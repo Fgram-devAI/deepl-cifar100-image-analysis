@@ -26,6 +26,7 @@ from evaluation.metrics import (
     find_best_threshold,
 )
 from models.baseline import build_baseline_cnn
+from models.efficientnet_b0 import build_efficientnet_b0
 from training.callbacks import get_callbacks
 from training.class_weights import compute_balanced_class_weights
 from training.losses import get_loss
@@ -41,15 +42,25 @@ def load_config(config_path) -> Dict[str, Any]:
 
 def _build_model(config: Dict[str, Any], *, num_classes: int = 1) -> tf.keras.Model:
     architecture = config.get("architecture", "baseline_cnn")
-    if architecture != "baseline_cnn":
-        raise ValueError(
-            f"This branch only ships the 'baseline_cnn' architecture; "
-            f"got {architecture!r}"
+    if architecture == "baseline_cnn":
+        return build_baseline_cnn(
+            dropout=float(config.get("dropout", 0.3)),
+            num_classes=num_classes,
+            augmentation=config.get("augmentation"),
         )
-    return build_baseline_cnn(
-        dropout=float(config.get("dropout", 0.3)),
-        num_classes=num_classes,
-        augmentation=config.get("augmentation"),
+    if architecture == "efficientnet_b0":
+        return build_efficientnet_b0(
+            dropout=float(config.get("dropout", 0.3)),
+            num_classes=num_classes,
+            freeze_backbone=bool(config.get("freeze_backbone", True)),
+            unfreeze_from=config.get("unfreeze_from"),
+            freeze_bn=bool(config.get("freeze_bn", True)),
+            input_size=int(config.get("input_size", 96)),
+            augmentation=config.get("augmentation"),
+        )
+    raise ValueError(
+        f"Unsupported architecture {architecture!r}. "
+        "Supported architectures are 'baseline_cnn' and 'efficientnet_b0'."
     )
 
 

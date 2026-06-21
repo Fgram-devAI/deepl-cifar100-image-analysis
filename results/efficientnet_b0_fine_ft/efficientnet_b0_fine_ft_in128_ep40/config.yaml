@@ -1,0 +1,34 @@
+architecture: efficientnet_b0
+run_name: efficientnet_b0_fine_ft_in128_ep40
+snapshot_weights: results/efficientnet_b0_fine_unfreeze_block6/efficientnet_b0_fine_unfreeze_block6_in128_ep30/weights.h5
+seed: 42
+task:
+  type: multiclass
+  label_level: fine
+validation:
+  fraction: 0.1
+class_imbalance:
+  strategy: none
+batch_size: 64
+shuffle_buffer: 4096
+dropout: 0.4
+epochs: 40
+optimizer: adam
+learning_rate: 1e-5
+freeze_backbone: false
+unfreeze_from: all
+freeze_bn: true
+input_size: 128
+augmentation:
+  enabled: true
+  horizontal_flip: true
+  translation: 0.1
+  zoom: 0.1
+  rotation: 0.05
+  contrast: 0.1
+early_stopping:
+  monitor: val_loss
+  patience: 10
+output_dir: results/efficientnet_b0_fine_ft
+save_weights: true
+subset_size: null
