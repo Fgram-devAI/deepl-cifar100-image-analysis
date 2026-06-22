@@ -6,6 +6,7 @@ from models.augmentation import build_augmentation
 
 keras = tf.keras
 layers = tf.keras.layers
+regularizers = tf.keras.regularizers
 
 
 def build_baseline_cnn(
@@ -83,6 +84,7 @@ def _conv_bn_relu(x: tf.Tensor, filters: int, name: str) -> tf.Tensor:
         padding="same",
         use_bias=False,
         kernel_initializer="he_normal",
+        kernel_regularizer=regularizers.l2(1e-4),
         name=f"{name}_conv",
     )(x)
     x = layers.BatchNormalization(name=f"{name}_bn")(x)
@@ -114,17 +116,17 @@ def build_strong_cnn(
     x = _conv_bn_relu(x, 32, "block1_conv1")
     x = _conv_bn_relu(x, 32, "block1_conv2")
     x = layers.MaxPool2D(pool_size=2, name="block1_pool")(x)
-    x = layers.Dropout(dropout * 0.5, name="block1_dropout")(x)
+    x = layers.SpatialDropout2D(dropout * 0.5, name="block1_dropout")(x)
 
     x = _conv_bn_relu(x, 64, "block2_conv1")
     x = _conv_bn_relu(x, 64, "block2_conv2")
     x = layers.MaxPool2D(pool_size=2, name="block2_pool")(x)
-    x = layers.Dropout(dropout * 0.75, name="block2_dropout")(x)
+    x = layers.SpatialDropout2D(dropout * 0.75, name="block2_dropout")(x)
 
     x = _conv_bn_relu(x, 128, "block3_conv1")
     x = _conv_bn_relu(x, 128, "block3_conv2")
     x = layers.MaxPool2D(pool_size=2, name="block3_pool")(x)
-    x = layers.Dropout(dropout, name="block3_dropout")(x)
+    x = layers.SpatialDropout2D(dropout, name="block3_dropout")(x)
 
     x = _conv_bn_relu(x, 256, "block4_conv1")
     x = layers.GlobalAveragePooling2D(name="global_avg_pool")(x)
@@ -132,6 +134,7 @@ def build_strong_cnn(
         256,
         use_bias=False,
         kernel_initializer="he_normal",
+        kernel_regularizer=regularizers.l2(1e-4),
         name="head_dense",
     )(x)
     x = layers.BatchNormalization(name="head_bn")(x)
