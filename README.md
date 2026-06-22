@@ -135,7 +135,11 @@ Suggested notebook sequence:
   [![Open 04 in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Fgram-devAI/deepl-cifar100-image-analysis/blob/main/notebooks/04_efficientnet_b0_transfer_learning.ipynb)
 - [05 EfficientNetB0 fine transfer learning](notebooks/05_efficientnet_b0_fine_transfer_learning.ipynb)
   [![Open 05 in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Fgram-devAI/deepl-cifar100-image-analysis/blob/main/notebooks/05_efficientnet_b0_fine_transfer_learning.ipynb)
-- Future notebooks: data augmentation, MobileNet transfer learning, sequence models, and
+- [06 MobileNetV3 coarse frozen/unfrozen transfer learning](notebooks/06_mobilenetv3_coarse_frozen_unfrozen.ipynb)
+  [![Open 06 in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Fgram-devAI/deepl-cifar100-image-analysis/blob/main/notebooks/06_mobilenetv3_coarse_frozen_unfrozen.ipynb)
+- [07 MobileNetV3 fine frozen/unfrozen transfer learning](notebooks/07_mobilenetv3_fine_frozen_unfrozen.ipynb)
+  [![Open 07 in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Fgram-devAI/deepl-cifar100-image-analysis/blob/main/notebooks/07_mobilenetv3_fine_frozen_unfrozen.ipynb)
+- Future notebooks: data augmentation, sequence models, and
   attention/ViT comparison.
 
 Imported EfficientNetB0 run summaries:
@@ -146,6 +150,15 @@ Imported EfficientNetB0 run summaries:
 | EfficientNetB0 fine frozen | 100 fine classes | 0.6863 | 0.6831 |
 | EfficientNetB0 fine fine-tuned | 100 fine classes | 0.7850 | 0.7840 |
 | EfficientNetB0 fine unfreeze block 6 | 100 fine classes | 0.7671 | 0.7661 |
+
+Imported MobileNetV3Small run summaries:
+
+| Run | Task | Top-1 | Top-5 | Macro F1 | Cohen κ |
+| --- | --- | ---: | ---: | ---: | ---: |
+| MobileNetV3Small coarse frozen | 20 coarse classes | 0.7939 | 0.9693 | 0.7935 | 0.7831 |
+| MobileNetV3Small coarse unfrozen | 20 coarse classes | 0.8408 | 0.9832 | 0.8409 | 0.8324 |
+| MobileNetV3Small fine frozen | 100 fine classes | 0.6929 | 0.9213 | 0.6902 | 0.6898 |
+| MobileNetV3Small fine unfrozen | 100 fine classes | 0.7461 | 0.9482 | 0.7445 | 0.7435 |
 
 ## Project Structure
 
