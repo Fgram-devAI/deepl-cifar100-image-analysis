@@ -1,0 +1,35 @@
+architecture: bilstm
+run_name: bilstm_coarse_multiclass_10ep
+seed: 42
+
+view: sequence
+activation: tanh
+use_masking: false
+hidden_units: 64
+dropout: 0.3
+
+task:
+  type: multiclass
+  label_level: coarse
+
+validation:
+  fraction: 0.1
+  stratify: false
+
+class_imbalance:
+  strategy: none
+
+batch_size: 128
+shuffle_buffer: 4096
+
+epochs: 10
+optimizer: adam
+learning_rate: 1e-3
+gradient_clipnorm: 1.0
+early_stopping:
+  monitor: val_loss
+  patience: 3
+
+output_dir: results/sequence/bilstm/coarse
+save_weights: true
+subset_size: null

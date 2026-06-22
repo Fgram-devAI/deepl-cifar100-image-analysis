@@ -130,6 +130,21 @@ def test_build_model_efficientnet_b3_supports_partial_unfreeze_config():
     assert any(layer.trainable for layer in block6_layers)
 
 
+def test_build_model_routes_bilstm_to_sequence_model():
+    model = _build_model(
+        {
+            "architecture": "bilstm",
+            "hidden_units": 8,
+            "dropout": 0.2,
+        },
+        num_classes=20,
+    )
+
+    assert model.name == "bilstm_sequence"
+    assert model.input_shape == (None, 32, 96)
+    assert model.output_shape == (None, 20)
+
+
 def test_build_model_rejects_unknown_architecture():
     with pytest.raises(ValueError, match="architecture"):
         _build_model({"architecture": "vit"}, num_classes=1)

@@ -30,6 +30,7 @@ from models.baseline import build_baseline_cnn
 from models.efficientnet_b0 import build_efficientnet_b0
 from models.efficientnet_b3_fine import build_efficientnet_b3
 from models.resnet_family import build_resnet_family_model
+from models.sequential import build_bilstm, build_lstm, build_rnn
 from training.callbacks import get_callbacks
 from training.class_weights import compute_balanced_class_weights
 from training.losses import get_loss
@@ -45,6 +46,19 @@ def load_config(config_path) -> Dict[str, Any]:
 
 def _build_model(config: Dict[str, Any], *, num_classes: int = 1) -> tf.keras.Model:
     architecture = config.get("architecture", "baseline_cnn")
+    if architecture in {"rnn", "lstm", "bilstm"}:
+        builder = {
+            "rnn": build_rnn,
+            "lstm": build_lstm,
+            "bilstm": build_bilstm,
+        }[architecture]
+        return builder(
+            activation=str(config.get("activation", "tanh")),
+            use_masking=bool(config.get("use_masking", False)),
+            hidden_units=int(config.get("hidden_units", 64)),
+            dropout=float(config.get("dropout", 0.2)),
+            num_classes=num_classes,
+        )
     if architecture == "baseline_cnn":
         return build_baseline_cnn(
             dropout=float(config.get("dropout", 0.3)),
@@ -94,8 +108,8 @@ def _build_model(config: Dict[str, Any], *, num_classes: int = 1) -> tf.keras.Mo
         )
     raise ValueError(
         f"Unsupported architecture {architecture!r}. "
-        "Supported: 'baseline_cnn', 'efficientnet_b0', 'efficientnet_b3', "
-        "'resnet_family'."
+        "Supported: 'baseline_cnn', 'rnn', 'lstm', 'bilstm', "
+        "'efficientnet_b0', 'efficientnet_b3', 'resnet_family'."
     )
 
 
@@ -200,11 +214,12 @@ def _make_image_pipelines(
     batch_size: int,
     shuffle_buffer: int,
     seed: int,
+    view: str = "image",
 ) -> tuple:
     """Build train, val, and test tf.data pipelines."""
     train_ds = make_pipeline(
         x_tr, y_tr,
-        view="image",
+        view=view,
         batch_size=batch_size,
         shuffle=True,
         shuffle_buffer=shuffle_buffer,
@@ -212,17 +227,25 @@ def _make_image_pipelines(
     )
     val_ds = make_pipeline(
         x_val, y_val,
-        view="image",
+        view=view,
         batch_size=batch_size,
         shuffle=False,
     )
     test_ds = make_pipeline(
         test_images, test_labels,
-        view="image",
+        view=view,
         batch_size=batch_size,
         shuffle=False,
     )
     return train_ds, val_ds, test_ds
+
+
+def _data_view(config: Dict[str, Any]) -> str:
+    """Return the tf.data view requested by the config."""
+    view = str(config.get("view", "image"))
+    if view not in ("image", "sequence"):
+        raise ValueError(f"view must be 'image' or 'sequence'; got {view!r}")
+    return view
 
 
 def _iter_all_layers(model: tf.keras.Model):
@@ -337,6 +360,7 @@ def _run_binary(
         batch_size=batch_size,
         shuffle_buffer=shuffle_buffer,
         seed=seed,
+        view=_data_view(config),
     )
 
     strategy = config.get("class_imbalance", {}).get("strategy", "none")
@@ -458,6 +482,7 @@ def _run_multiclass(
         batch_size=batch_size,
         shuffle_buffer=shuffle_buffer,
         seed=seed,
+        view=_data_view(config),
     )
 
     model = _build_model(config, num_classes=num_classes)

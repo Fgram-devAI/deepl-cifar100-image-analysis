@@ -1,10 +1,33 @@
 """Sequential models: vanilla RNN, LSTM, and Bi-LSTM with optional masking."""
 
-from typing import Literal, Optional
+from typing import Literal
 import tensorflow as tf
 
 keras = tf.keras
 layers = tf.keras.layers
+
+
+def _head_units_and_activation(
+    *, head: str, num_classes: int | None
+) -> tuple[int, str]:
+    """Resolve legacy head names and newer num_classes routing."""
+    if num_classes is not None:
+        if num_classes < 1:
+            raise ValueError("num_classes must be >= 1")
+        return (1, "sigmoid") if num_classes == 1 else (num_classes, "softmax")
+    if head == "binary":
+        return 1, "sigmoid"
+    if head == "multiclass":
+        return 10, "softmax"
+    raise ValueError("head must be 'binary' or 'multiclass'")
+
+
+def _input_layers(use_masking: bool) -> tuple[keras.Input, tf.Tensor]:
+    inputs = keras.Input(shape=(32, 96), name="sequence_input")
+    x: tf.Tensor = inputs
+    if use_masking:
+        x = layers.Masking(mask_value=0.0, name="row_masking")(x)
+    return inputs, x
 
 
 def build_rnn(
@@ -13,6 +36,7 @@ def build_rnn(
     head: str = "binary",
     hidden_units: int = 64,
     dropout: float = 0.2,
+    num_classes: int | None = None,
 ) -> keras.Model:
     """
     Build a vanilla RNN model for sequence classification.
@@ -20,9 +44,11 @@ def build_rnn(
     Args:
         activation: Recurrent activation ("tanh" or "relu").
         use_masking: If True, add a Masking layer before the RNN.
-        head: Output head ("binary" → sigmoid+1, "multiclass" → softmax+10).
+        head: Legacy output head ("binary" or "multiclass").
         hidden_units: Number of hidden units in the RNN.
         dropout: Dropout rate.
+        num_classes: Preferred output size. ``1`` gives a sigmoid binary head;
+            values above one give a softmax multiclass head.
 
     Returns:
         Compiled `keras.Model` ready for training.
@@ -32,13 +58,18 @@ def build_rnn(
         ReLU activations are prone to gradient explosion; gradient clipping must be
         applied in the optimizer (see training.train). This is a known gotcha.
     """
-    # TODO: Implement vanilla RNN model.
-    # 1. Input: (batch, 32, 96)
-    # 2. Optional Masking(mask_value=0.0) if use_masking=True
-    # 3. RNN layer with activation
-    # 4. Dropout
-    # 5. Classification head (sigmoid or softmax based on head)
-    raise NotImplementedError("build_rnn not yet implemented")
+    units, output_activation = _head_units_and_activation(
+        head=head, num_classes=num_classes
+    )
+    inputs, x = _input_layers(use_masking)
+    x = layers.SimpleRNN(
+        hidden_units,
+        activation=activation,
+        name="simple_rnn",
+    )(x)
+    x = layers.Dropout(dropout, name="dropout")(x)
+    outputs = layers.Dense(units, activation=output_activation, name="classifier")(x)
+    return keras.Model(inputs=inputs, outputs=outputs, name="rnn_sequence")
 
 
 def build_lstm(
@@ -47,6 +78,7 @@ def build_lstm(
     head: str = "binary",
     hidden_units: int = 64,
     dropout: float = 0.2,
+    num_classes: int | None = None,
 ) -> keras.Model:
     """
     Build an LSTM model for sequence classification.
@@ -57,6 +89,8 @@ def build_lstm(
         head: Output head ("binary" or "multiclass").
         hidden_units: Number of hidden units in the LSTM.
         dropout: Dropout rate.
+        num_classes: Preferred output size. ``1`` gives a sigmoid binary head;
+            values above one give a softmax multiclass head.
 
     Returns:
         Compiled `keras.Model`.
@@ -65,9 +99,18 @@ def build_lstm(
         Input shape: (batch, T=32, features=96).
         LSTM is more resistant to vanishing gradients than vanilla RNN.
     """
-    # TODO: Implement LSTM model.
-    # Same structure as build_rnn but with LSTM layer.
-    raise NotImplementedError("build_lstm not yet implemented")
+    units, output_activation = _head_units_and_activation(
+        head=head, num_classes=num_classes
+    )
+    inputs, x = _input_layers(use_masking)
+    x = layers.LSTM(
+        hidden_units,
+        activation=activation,
+        name="lstm",
+    )(x)
+    x = layers.Dropout(dropout, name="dropout")(x)
+    outputs = layers.Dense(units, activation=output_activation, name="classifier")(x)
+    return keras.Model(inputs=inputs, outputs=outputs, name="lstm_sequence")
 
 
 def build_bilstm(
@@ -76,6 +119,7 @@ def build_bilstm(
     head: str = "binary",
     hidden_units: int = 64,
     dropout: float = 0.2,
+    num_classes: int | None = None,
 ) -> keras.Model:
     """
     Build a Bidirectional LSTM model for sequence classification.
@@ -86,6 +130,8 @@ def build_bilstm(
         head: Output head ("binary" or "multiclass").
         hidden_units: Number of hidden units in each LSTM direction.
         dropout: Dropout rate.
+        num_classes: Preferred output size. ``1`` gives a sigmoid binary head;
+            values above one give a softmax multiclass head.
 
     Returns:
         Compiled `keras.Model`.
@@ -94,6 +140,14 @@ def build_bilstm(
         Input shape: (batch, T=32, features=96).
         BiLSTM processes the sequence in both directions.
     """
-    # TODO: Implement Bidirectional LSTM model.
-    # Same structure as build_lstm but wrapped in Bidirectional.
-    raise NotImplementedError("build_bilstm not yet implemented")
+    units, output_activation = _head_units_and_activation(
+        head=head, num_classes=num_classes
+    )
+    inputs, x = _input_layers(use_masking)
+    x = layers.Bidirectional(
+        layers.LSTM(hidden_units, activation=activation),
+        name="bilstm",
+    )(x)
+    x = layers.Dropout(dropout, name="dropout")(x)
+    outputs = layers.Dense(units, activation=output_activation, name="classifier")(x)
+    return keras.Model(inputs=inputs, outputs=outputs, name="bilstm_sequence")
