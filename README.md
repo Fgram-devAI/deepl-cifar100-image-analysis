@@ -138,19 +138,12 @@ Suggested notebook sequence:
 - Future notebooks: data augmentation, MobileNet transfer learning, sequence models, and
   attention/ViT comparison.
 
-EfficientNetB0 run summaries:
-
-**Local config-reproducible runs** (via `python -m training.train --config ...`):
-
-| Run | Task | Accuracy | Macro F1 | Config |
-| --- | --- | ---: | ---: | --- |
-| EfficientNetB0 coarse frozen | 20 coarse classes | 0.7396 | 0.7385 | `configs/transfer/efficientnet/multiclass/efficientnet_b0_coarse.yaml` |
-| EfficientNetB0 fine frozen | 100 fine classes | 0.6863 | 0.6831 | `configs/transfer/efficientnet/multiclass/efficientnet_b0_fine.yaml` |
-
-**Notebook-only results** (from [05 EfficientNetB0 fine transfer learning](notebooks/05_efficientnet_b0_fine_transfer_learning.ipynb)):
+Imported EfficientNetB0 run summaries:
 
 | Run | Task | Accuracy | Macro F1 |
 | --- | --- | ---: | ---: |
+| EfficientNetB0 coarse frozen | 20 coarse classes | 0.7396 | 0.7385 |
+| EfficientNetB0 fine frozen | 100 fine classes | 0.6863 | 0.6831 |
 | EfficientNetB0 fine fine-tuned | 100 fine classes | 0.7850 | 0.7840 |
 | EfficientNetB0 fine unfreeze block 6 | 100 fine classes | 0.7671 | 0.7661 |
 
