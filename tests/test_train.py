@@ -60,6 +60,37 @@ def test_build_model_resnet_family_multiclass_head_shape():
     assert model.output_shape == (None, 20)
 
 
+def test_build_model_routes_efficientnet_b0_to_new_builder():
+    model = _build_model(
+        {
+            "architecture": "efficientnet_b0",
+            "resize_to": 64,
+            "dropout": 0.2,
+            "trainable_backbone": False,
+            "weights": None,
+        },
+        num_classes=20,
+    )
+
+    assert model.name == "efficientnet_b0_transfer"
+    assert model.input_shape == (None, 32, 32, 3)
+    assert model.output_shape == (None, 20)
+
+
+def test_build_model_efficientnet_b0_supports_legacy_freeze_key():
+    model = _build_model(
+        {
+            "architecture": "efficientnet_b0",
+            "input_size": 64,
+            "freeze_backbone": True,
+            "weights": None,
+        },
+        num_classes=20,
+    )
+    backbone = [layer for layer in model.layers if isinstance(layer, tf.keras.Model)][0]
+    assert not backbone.trainable
+
+
 def test_build_model_rejects_unknown_architecture():
     with pytest.raises(ValueError, match="architecture"):
         _build_model({"architecture": "vit"}, num_classes=1)
@@ -320,3 +351,32 @@ def test_resnet_family_config_parses_and_routes_to_builder(config_path):
     num_classes = 1 if config["task"]["type"] == "binary" else 20
     model = _build_model(config, num_classes=num_classes)
     assert model.name.endswith("_transfer")
+
+
+@pytest.mark.parametrize(
+    ("config_path", "label_level", "num_classes"),
+    [
+        (
+            "configs/transfer/efficientnet/multiclass/efficientnet_b0_coarse.yaml",
+            "coarse",
+            20,
+        ),
+        (
+            "configs/transfer/efficientnet/multiclass/efficientnet_b0_fine.yaml",
+            "fine",
+            100,
+        ),
+    ],
+)
+def test_efficientnet_b0_config_parses_and_routes_to_builder(
+    config_path, label_level, num_classes
+):
+    config = load_config(config_path)
+    assert config["architecture"] == "efficientnet_b0"
+    assert config["task"] == {"type": "multiclass", "label_level": label_level}
+
+    # Override weights to None so the test does not hit the network.
+    config["weights"] = None
+
+    model = _build_model(config, num_classes=num_classes)
+    assert model.name == "efficientnet_b0_transfer"

@@ -102,6 +102,12 @@ venv/bin/python -m training.train --config configs/multiclass/baseline_cnn_coars
 # Baseline CNN fine multiclass (100 classes; longer run)
 venv/bin/python -m training.train --config configs/multiclass/baseline_cnn_fine.yaml
 
+# EfficientNetB0 coarse multiclass transfer learning (20 superclasses)
+venv/bin/python -m training.train --config configs/transfer/efficientnet/multiclass/efficientnet_b0_coarse.yaml
+
+# EfficientNetB0 fine multiclass transfer learning (100 classes; longer run)
+venv/bin/python -m training.train --config configs/transfer/efficientnet/multiclass/efficientnet_b0_fine.yaml
+
 # Summarize the results/ directory into a CSV
 venv/bin/python -m evaluation.summarize_results --results-dir results --output results/summary.csv
 
@@ -125,8 +131,21 @@ Suggested notebook sequence:
   [![Open 02 in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Fgram-devAI/deepl-cifar100-image-analysis/blob/main/notebooks/02_baseline_cnn_training.ipynb)
 - [03 ResNet-family transfer learning](notebooks/03_resnet_family_transfer_learning.ipynb)
   [![Open 03 in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Fgram-devAI/deepl-cifar100-image-analysis/blob/main/notebooks/03_resnet_family_transfer_learning.ipynb)
-- Future notebooks: data augmentation, EfficientNet/MobileNet transfer learning, sequence models,
-  and attention/ViT comparison.
+- [04 EfficientNetB0 coarse transfer learning](notebooks/04_efficientnet_b0_transfer_learning.ipynb)
+  [![Open 04 in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Fgram-devAI/deepl-cifar100-image-analysis/blob/main/notebooks/04_efficientnet_b0_transfer_learning.ipynb)
+- [05 EfficientNetB0 fine transfer learning](notebooks/05_efficientnet_b0_fine_transfer_learning.ipynb)
+  [![Open 05 in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Fgram-devAI/deepl-cifar100-image-analysis/blob/main/notebooks/05_efficientnet_b0_fine_transfer_learning.ipynb)
+- Future notebooks: data augmentation, MobileNet transfer learning, sequence models, and
+  attention/ViT comparison.
+
+Imported EfficientNetB0 run summaries:
+
+| Run | Task | Accuracy | Macro F1 |
+| --- | --- | ---: | ---: |
+| EfficientNetB0 coarse frozen | 20 coarse classes | 0.7396 | 0.7385 |
+| EfficientNetB0 fine frozen | 100 fine classes | 0.6863 | 0.6831 |
+| EfficientNetB0 fine fine-tuned | 100 fine classes | 0.7850 | 0.7840 |
+| EfficientNetB0 fine unfreeze block 6 | 100 fine classes | 0.7671 | 0.7661 |
 
 ## Project Structure
 
