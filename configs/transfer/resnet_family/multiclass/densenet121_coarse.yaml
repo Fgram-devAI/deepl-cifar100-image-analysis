@@ -1,0 +1,40 @@
+# Transfer-learning DenseNet121, frozen backbone, on the 100-class coarse multiclass task.
+
+architecture: resnet_family
+backbone_name: densenet121
+run_name: densenet121_coarse_multiclass_finetune_350_lr_2e-6
+
+seed: 42
+
+resize_to: 224
+trainable_backbone: true
+fine_tune_at: 350
+dropout: 0.2
+weights: imagenet
+
+task:
+  type: multiclass
+  label_level: coarse
+
+validation:
+  fraction: 0.1
+  stratify: false
+
+class_imbalance:
+  strategy: none
+
+batch_size: 32
+shuffle_buffer: 4096
+
+epochs: 5
+optimizer: adam
+learning_rate: 2e-6
+early_stopping:
+  monitor: val_loss
+  patience: 5
+
+initial_weights: results/transfer/resnet_family/multiclass/coarse/densenet121_coarse_multiclass_frozen/weights.h5
+
+output_dir: results/transfer/resnet_family/multiclass/coarse
+save_weights: true
+subset_size: null

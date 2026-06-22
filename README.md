@@ -141,8 +141,9 @@ Suggested notebook sequence:
   [![Open 07 in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Fgram-devAI/deepl-cifar100-image-analysis/blob/main/notebooks/07_mobilenetv3_fine_frozen_unfrozen.ipynb)
 - [08 EfficientNetB3 fine transfer learning](notebooks/08_efficientnet_b3_fine_transfer_learning.ipynb)
   [![Open 08 in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Fgram-devAI/deepl-cifar100-image-analysis/blob/main/notebooks/08_efficientnet_b3_fine_transfer_learning.ipynb)
-- Future notebooks: data augmentation, sequence models, and
-  attention/ViT comparison.
+- [09 Hugging Face ViT transfer learning](notebooks/09_hf_vit_transfer_learning.ipynb)
+  [![Open 09 in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Fgram-devAI/deepl-cifar100-image-analysis/blob/main/notebooks/09_hf_vit_transfer_learning.ipynb)
+- Future notebooks: data augmentation and sequence models.
 
 Imported Baseline CNN run summaries from local `results/` artifacts. Binary rows report the best
 local run per task by F1; multiclass rows report the strongest local multiclass run by macro F1.
@@ -178,20 +179,23 @@ Imported ResNet-family and DenseNet run summaries from local `results/` artifact
 | --- | --- | ---: | ---: | ---: | ---: |
 | ResNet50V2 coarse frozen | 20 coarse classes | 0.7837 | 0.7832 | 0.9348 | 0.9712 |
 | ResNet50V2 coarse fine-tuned | 20 coarse classes | 0.8246 | 0.8236 | 0.9508 | 0.9791 |
+| DenseNet121 coarse frozen | 20 coarse classes | 0.7589 | 0.7580 | 0.9271 | 0.9681 |
+| DenseNet121 coarse fine-tuned | 20 coarse classes | 0.7751 | 0.7745 | 0.9339 | 0.9725 |
 | ResNet50V2 fine frozen | 100 fine classes | 0.6974 | 0.6969 | 0.8756 | 0.9246 |
 | ResNet50V2 fine fine-tuned | 100 fine classes | 0.7098 | 0.7106 | 0.8853 | 0.9287 |
 | DenseNet121 fine frozen | 100 fine classes | 0.6969 | 0.6965 | 0.8783 | 0.9280 |
+| DenseNet121 fine fine-tuned | 100 fine classes | 0.7131 | 0.7133 | 0.8874 | 0.9341 |
 
 Imported EfficientNet run summaries:
 
-| Run | Task | Accuracy | Macro F1 |
-| --- | --- | ---: | ---: |
-| EfficientNetB0 coarse frozen | 20 coarse classes | 0.7396 | 0.7385 |
-| EfficientNetB0 fine frozen | 100 fine classes | 0.6863 | 0.6831 |
-| EfficientNetB0 fine fine-tuned | 100 fine classes | 0.7850 | 0.7840 |
-| EfficientNetB0 fine unfreeze block 6 | 100 fine classes | 0.7671 | 0.7661 |
-| EfficientNetB3 fine unfreeze block 6 | 100 fine classes | 0.7819 | 0.7806 |
-| EfficientNetB3 fine fine-tuned | 100 fine classes | 0.8321 | 0.8319 |
+| Run | Task | Accuracy | Macro F1 | Top-3 | Top-5 |
+| --- | --- | ---: | ---: | ---: | ---: |
+| EfficientNetB0 coarse frozen | 20 coarse classes | 0.7396 | 0.7385 | 0.9129 | 0.9580 |
+| EfficientNetB0 fine frozen | 100 fine classes | 0.6863 | 0.6831 | 0.8660 | 0.9164 |
+| EfficientNetB0 fine fine-tuned | 100 fine classes | 0.7850 | 0.7840 | 0.9329 | 0.9620 |
+| EfficientNetB0 fine unfreeze block 6 | 100 fine classes | 0.7671 | 0.7661 | 0.9187 | 0.9510 |
+| EfficientNetB3 fine unfreeze block 6 | 100 fine classes | 0.7819 | 0.7806 | 0.9287 | 0.9619 |
+| EfficientNetB3 fine fine-tuned | 100 fine classes | 0.8321 | 0.8319 | 0.9524 | 0.9738 |
 
 Imported MobileNetV3Small run summaries:
 
