@@ -144,6 +144,44 @@ Suggested notebook sequence:
 - Future notebooks: data augmentation, sequence models, and
   attention/ViT comparison.
 
+Imported Baseline CNN run summaries from local `results/` artifacts. Binary rows report the best
+local run per task by F1; multiclass rows report the strongest local multiclass run by macro F1.
+
+| Run | Task | Accuracy | F1 | ROC AUC | PR AUC |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Baseline CNN aquatic mammals | coarse binary | 0.9232 | 0.3600 | 0.8717 | 0.3410 |
+| Baseline CNN fish | coarse binary | 0.9248 | 0.3816 | 0.8342 | 0.3279 |
+| Baseline CNN flowers | coarse binary | 0.9531 | 0.5740 | 0.9466 | 0.5763 |
+| Baseline CNN food containers | coarse binary | 0.9341 | 0.4872 | 0.8871 | 0.4986 |
+| Baseline CNN people | coarse binary | 0.9495 | 0.4914 | 0.9023 | 0.4895 |
+| Baseline CNN cow | fine binary | 0.9867 | 0.2130 | 0.8363 | 0.1399 |
+| Baseline CNN mushroom | fine binary | 0.9891 | 0.2685 | 0.8976 | 0.1772 |
+| Baseline CNN orange | fine binary | 0.9822 | 0.4027 | 0.9750 | 0.2991 |
+| Baseline CNN skyscraper | fine binary | 0.9924 | 0.6000 | 0.9654 | 0.5685 |
+| Baseline CNN snake | fine binary | 0.9635 | 0.1492 | 0.7725 | 0.0611 |
+
+| Run | Task | Accuracy | Macro F1 | Top-3 | Top-5 |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Baseline CNN coarse multiclass | 20 coarse classes | 0.2813 | 0.2629 | 0.5235 | 0.6623 |
+
+Imported ResNet-family and DenseNet run summaries from local `results/` artifacts:
+
+| Run | Task | Accuracy | F1 | ROC AUC | PR AUC |
+| --- | --- | ---: | ---: | ---: | ---: |
+| ResNet50V2 food containers frozen | coarse binary | 0.9835 | 0.8427 | 0.9910 | 0.9189 |
+| ResNet50V2 orange frozen | fine binary | 0.9965 | 0.8325 | 0.9983 | 0.9098 |
+| ResNet50V2 skyscraper frozen | fine binary | 0.9964 | 0.8085 | 0.9950 | 0.8999 |
+| ResNet50V2 skyscraper fine-tuned | fine binary | 0.9983 | 0.9101 | 0.9925 | 0.9516 |
+| DenseNet121 skyscraper frozen | fine binary | 0.9959 | 0.7735 | 0.9892 | 0.8050 |
+
+| Run | Task | Accuracy | Macro F1 | Top-3 | Top-5 |
+| --- | --- | ---: | ---: | ---: | ---: |
+| ResNet50V2 coarse frozen | 20 coarse classes | 0.7837 | 0.7832 | 0.9348 | 0.9712 |
+| ResNet50V2 coarse fine-tuned | 20 coarse classes | 0.8246 | 0.8236 | 0.9508 | 0.9791 |
+| ResNet50V2 fine frozen | 100 fine classes | 0.6974 | 0.6969 | 0.8756 | 0.9246 |
+| ResNet50V2 fine fine-tuned | 100 fine classes | 0.7098 | 0.7106 | 0.8853 | 0.9287 |
+| DenseNet121 fine frozen | 100 fine classes | 0.6969 | 0.6965 | 0.8783 | 0.9280 |
+
 Imported EfficientNet run summaries:
 
 | Run | Task | Accuracy | Macro F1 |
