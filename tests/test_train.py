@@ -29,6 +29,20 @@ def test_build_model_wires_enabled_augmentation_config():
     assert "augmentation" in layer_names
 
 
+def test_build_model_routes_strong_cnn_to_new_builder():
+    model = _build_model(
+        {
+            "architecture": "strong_cnn",
+            "dropout": 0.35,
+        },
+        num_classes=20,
+    )
+
+    assert model.name == "strong_cnn"
+    assert model.input_shape == (None, 32, 32, 3)
+    assert model.output_shape == (None, 20)
+
+
 def test_build_model_routes_resnet_family_to_new_builder():
     model = _build_model(
         {

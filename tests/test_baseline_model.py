@@ -3,7 +3,7 @@
 import numpy as np
 import tensorflow as tf
 
-from models.baseline import build_baseline_cnn
+from models.baseline import build_baseline_cnn, build_strong_cnn
 
 
 def test_baseline_cnn_input_and_output_shapes():
@@ -108,3 +108,21 @@ def test_baseline_cnn_disabled_augmentation_config_has_no_augmentation_layer():
     model = build_baseline_cnn(augmentation={"enabled": False})
     layer_names = [l.name for l in model.layers]
     assert "augmentation" not in layer_names
+
+
+def test_strong_cnn_coarse_multiclass_head_has_20_softmax_units():
+    model = build_strong_cnn(num_classes=20)
+    assert model.name == "strong_cnn"
+    assert model.input_shape == (None, 32, 32, 3)
+    assert model.output_shape == (None, 20)
+    last = model.layers[-1]
+    assert last.activation.__name__ == "softmax"
+    assert last.units == 20
+
+
+def test_strong_cnn_includes_batch_norm_and_pooling():
+    model = build_strong_cnn(num_classes=20)
+    layer_types = {type(layer).__name__ for layer in model.layers}
+    assert "BatchNormalization" in layer_types
+    assert "MaxPooling2D" in layer_types
+    assert "GlobalAveragePooling2D" in layer_types

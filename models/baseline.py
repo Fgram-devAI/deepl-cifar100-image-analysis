@@ -1,4 +1,4 @@
-"""Baseline CNN for CIFAR-100 binary tasks (image view)."""
+"""From-scratch CNN baselines for CIFAR-100 image-view tasks."""
 
 import tensorflow as tf
 
@@ -63,3 +63,80 @@ def build_baseline_cnn(
         outputs = layers.Dense(num_classes, activation="softmax", name="prob")(x)
 
     return keras.Model(inputs=inputs, outputs=outputs, name="baseline_cnn")
+
+
+def _classification_head(
+    x: tf.Tensor,
+    *,
+    num_classes: int,
+    name: str = "prob",
+) -> tf.Tensor:
+    if num_classes == 1:
+        return layers.Dense(1, activation="sigmoid", name=name)(x)
+    return layers.Dense(num_classes, activation="softmax", name=name)(x)
+
+
+def _conv_bn_relu(x: tf.Tensor, filters: int, name: str) -> tf.Tensor:
+    x = layers.Conv2D(
+        filters,
+        3,
+        padding="same",
+        use_bias=False,
+        kernel_initializer="he_normal",
+        name=f"{name}_conv",
+    )(x)
+    x = layers.BatchNormalization(name=f"{name}_bn")(x)
+    return layers.Activation("relu", name=f"{name}_relu")(x)
+
+
+def build_strong_cnn(
+    input_shape: tuple[int, int, int] = (32, 32, 3),
+    dropout: float = 0.35,
+    num_classes: int = 1,
+    augmentation: dict | None = None,
+) -> keras.Model:
+    """Build a stronger from-scratch CNN control model.
+
+    This model is intentionally still a CIFAR-sized from-scratch baseline, not
+    a transfer-learning backbone. It adds the ingredients missing from the
+    compact baseline CNN: repeated conv blocks, BatchNorm, MaxPooling, and a
+    GlobalAveragePooling head. Use it as a control when comparing row-sequence
+    RNN/LSTM/Bi-LSTM models against convolutional inductive bias.
+    """
+    if num_classes < 1:
+        raise ValueError(f"num_classes must be >= 1; got {num_classes}")
+
+    inputs = keras.Input(shape=input_shape, name="image")
+
+    aug_layer = build_augmentation(augmentation)
+    x = aug_layer(inputs) if aug_layer is not None else inputs
+
+    x = _conv_bn_relu(x, 32, "block1_conv1")
+    x = _conv_bn_relu(x, 32, "block1_conv2")
+    x = layers.MaxPool2D(pool_size=2, name="block1_pool")(x)
+    x = layers.Dropout(dropout * 0.5, name="block1_dropout")(x)
+
+    x = _conv_bn_relu(x, 64, "block2_conv1")
+    x = _conv_bn_relu(x, 64, "block2_conv2")
+    x = layers.MaxPool2D(pool_size=2, name="block2_pool")(x)
+    x = layers.Dropout(dropout * 0.75, name="block2_dropout")(x)
+
+    x = _conv_bn_relu(x, 128, "block3_conv1")
+    x = _conv_bn_relu(x, 128, "block3_conv2")
+    x = layers.MaxPool2D(pool_size=2, name="block3_pool")(x)
+    x = layers.Dropout(dropout, name="block3_dropout")(x)
+
+    x = _conv_bn_relu(x, 256, "block4_conv1")
+    x = layers.GlobalAveragePooling2D(name="global_avg_pool")(x)
+    x = layers.Dense(
+        256,
+        use_bias=False,
+        kernel_initializer="he_normal",
+        name="head_dense",
+    )(x)
+    x = layers.BatchNormalization(name="head_bn")(x)
+    x = layers.Activation("relu", name="head_relu")(x)
+    x = layers.Dropout(dropout, name="head_dropout")(x)
+
+    outputs = _classification_head(x, num_classes=num_classes)
+    return keras.Model(inputs=inputs, outputs=outputs, name="strong_cnn")

@@ -1,0 +1,30 @@
+architecture: strong_cnn
+run_name: strong_cnn_coarse_multiclass_60ep
+seed: 42
+
+task:
+  type: multiclass
+  label_level: coarse
+
+validation:
+  fraction: 0.1
+  stratify: false
+
+class_imbalance:
+  strategy: none
+
+batch_size: 128
+shuffle_buffer: 4096
+dropout: 0.35
+
+epochs: 60
+optimizer: adam
+learning_rate: 1e-4
+gradient_clipnorm: 1.0
+early_stopping:
+  monitor: val_loss
+  patience: 8
+
+output_dir: results/strong_cnn/multiclass/coarse
+save_weights: true
+subset_size: null

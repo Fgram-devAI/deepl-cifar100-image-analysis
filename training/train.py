@@ -26,7 +26,7 @@ from evaluation.metrics import (
     compute_multiclass_metrics,
     find_best_threshold,
 )
-from models.baseline import build_baseline_cnn
+from models.baseline import build_baseline_cnn, build_strong_cnn
 from models.efficientnet_b0 import build_efficientnet_b0
 from models.efficientnet_b3_fine import build_efficientnet_b3
 from models.resnet_family import build_resnet_family_model
@@ -62,6 +62,12 @@ def _build_model(config: Dict[str, Any], *, num_classes: int = 1) -> tf.keras.Mo
     if architecture == "baseline_cnn":
         return build_baseline_cnn(
             dropout=float(config.get("dropout", 0.3)),
+            num_classes=num_classes,
+            augmentation=config.get("augmentation"),
+        )
+    if architecture == "strong_cnn":
+        return build_strong_cnn(
+            dropout=float(config.get("dropout", 0.35)),
             num_classes=num_classes,
             augmentation=config.get("augmentation"),
         )
@@ -108,7 +114,7 @@ def _build_model(config: Dict[str, Any], *, num_classes: int = 1) -> tf.keras.Mo
         )
     raise ValueError(
         f"Unsupported architecture {architecture!r}. "
-        "Supported: 'baseline_cnn', 'rnn', 'lstm', 'bilstm', "
+        "Supported: 'baseline_cnn', 'strong_cnn', 'rnn', 'lstm', 'bilstm', "
         "'efficientnet_b0', 'efficientnet_b3', 'resnet_family'."
     )
 
