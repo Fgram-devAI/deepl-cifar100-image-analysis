@@ -139,10 +139,12 @@ Suggested notebook sequence:
   [![Open 06 in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Fgram-devAI/deepl-cifar100-image-analysis/blob/main/notebooks/06_mobilenetv3_coarse_frozen_unfrozen.ipynb)
 - [07 MobileNetV3 fine frozen/unfrozen transfer learning](notebooks/07_mobilenetv3_fine_frozen_unfrozen.ipynb)
   [![Open 07 in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Fgram-devAI/deepl-cifar100-image-analysis/blob/main/notebooks/07_mobilenetv3_fine_frozen_unfrozen.ipynb)
+- [08 EfficientNetB3 fine transfer learning](notebooks/08_efficientnet_b3_fine_transfer_learning.ipynb)
+  [![Open 08 in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Fgram-devAI/deepl-cifar100-image-analysis/blob/main/notebooks/08_efficientnet_b3_fine_transfer_learning.ipynb)
 - Future notebooks: data augmentation, sequence models, and
   attention/ViT comparison.
 
-Imported EfficientNetB0 run summaries:
+Imported EfficientNet run summaries:
 
 | Run | Task | Accuracy | Macro F1 |
 | --- | --- | ---: | ---: |
@@ -150,6 +152,8 @@ Imported EfficientNetB0 run summaries:
 | EfficientNetB0 fine frozen | 100 fine classes | 0.6863 | 0.6831 |
 | EfficientNetB0 fine fine-tuned | 100 fine classes | 0.7850 | 0.7840 |
 | EfficientNetB0 fine unfreeze block 6 | 100 fine classes | 0.7671 | 0.7661 |
+| EfficientNetB3 fine unfreeze block 6 | 100 fine classes | 0.7819 | 0.7806 |
+| EfficientNetB3 fine fine-tuned | 100 fine classes | 0.8321 | 0.8319 |
 
 Imported MobileNetV3Small run summaries:
 

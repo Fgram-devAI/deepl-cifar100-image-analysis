@@ -13,3 +13,4 @@ evaluation, and plotting needed to run independently in Colab.
 - [05 EfficientNetB0 fine transfer learning](05_efficientnet_b0_fine_transfer_learning.ipynb)
 - [06 MobileNetV3 coarse frozen/unfrozen transfer learning](06_mobilenetv3_coarse_frozen_unfrozen.ipynb)
 - [07 MobileNetV3 fine frozen/unfrozen transfer learning](07_mobilenetv3_fine_frozen_unfrozen.ipynb)
+- [08 EfficientNetB3 fine transfer learning](08_efficientnet_b3_fine_transfer_learning.ipynb)
