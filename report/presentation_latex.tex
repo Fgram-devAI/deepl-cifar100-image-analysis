@@ -182,7 +182,7 @@
     Primary metric  & \textbf{Macro F1} \;(+ Top-5 accuracy for multiclass) \\
     Transfer regimes& frozen head $\rightarrow$ partial unfreeze $\rightarrow$ full fine-tune \\
     Optimiser       & Adam; light augmentation where configured \\
-    Input handling  & Scratch models at 32 px; transfer CNNs at 96--160 px; ViT at 224 px \\
+    Input handling  & Scratch at 32 px; EfficientNet at 96--160 px; other transfer / ViT at 224 px \\
     Compute         & Google Colab T4 GPU; fixed seed 42 \\
     \bottomrule
   \end{tabular}
@@ -264,7 +264,7 @@
     \toprule
     \textbf{Run} & \textbf{Input view} & \textbf{Accuracy} & \textbf{Macro F1} & \textbf{Top-5} \\
     \midrule
-    Baseline CNN & image $(32,32,3)$ & 0.268 & 0.247 & 0.646 \\
+    Baseline CNN & image $(32,32,3)$ & 0.281 & 0.263 & 0.662 \\
     Strong CNN, regularized + aug. & image $(32,32,3)$ & 0.283 & 0.274 & 0.656 \\
     LSTM sequence & rows $(32,96)$ & 0.329 & 0.311 & 0.720 \\
     Bi-LSTM sequence & rows $(32,96)$ & \best{0.356} & \best{0.345} & \best{0.741} \\
@@ -303,7 +303,7 @@
       \end{itemize}
   \end{columns}
   \vfill
-  \source{ResNet50V2 / DenseNet121 / EfficientNetB0 / MobileNetV3-Small, coarse multiclass.}
+  \source{ResNet50V2 / DenseNet121 / EfficientNetB0 / MobileNetV3-Small, coarse multiclass. EfficientNetB0 coarse fine-tune was not exported.}
 \end{frame}
 
 
@@ -358,11 +358,11 @@
     \column{0.49\textwidth}
       \begin{itemize}
         \item Frozen head already reaches \textbf{0.683}; unfreezing block 6 adds
-              \textbf{+0.083}, full fine-tune a further \textbf{+0.029}.
+              \textbf{+0.083}, full fine-tune a further \textbf{+0.018}.
       \end{itemize}
     \column{0.49\textwidth}
       \begin{itemize}
-        \item \textbf{+0.112 Macro F1} end-to-end --- the largest frozen$\to$tuned lift of any
+        \item \textbf{+0.101 Macro F1} end-to-end --- the largest frozen$\to$tuned lift of any
               family, and the template for the B3 run next.
       \end{itemize}
   \end{columns}
@@ -435,7 +435,7 @@
 
 
 % ----- 15 Frozen vs fine-tuned: when does unfreezing pay off? -----
-\begin{frame}{When does unfreezing pay off?}
+\begin{frame}{When does unfreezing or PEFT pay off?}
   \centering
   % fmt: height cap keeps image + bullet columns clear of the footer
   \includegraphics[width=0.72\linewidth,height=0.52\textheight,keepaspectratio]{frozen_to_finetuned_delta.png}\\[0.3em]
@@ -447,12 +447,12 @@
       \end{itemize}
     \column{0.49\textwidth}
       \begin{itemize}
-        \item Largest ConvNet gain: \textbf{EfficientNetB0} ($0.683\rightarrow0.796$).
-              ResNet and DenseNet show smaller gains in the exported runs.
+        \item Largest ConvNet gain: \textbf{EfficientNetB0} ($0.683\rightarrow0.784$);
+              MobileNetV3-S and ViT-LoRA both add about \textbf{+0.054}.
       \end{itemize}
   \end{columns}
   \vfill
-  \source{Per-architecture frozen $\rightarrow$ best fine-tuned Macro F1 (fine task).}
+  \source{Per-architecture frozen/head-only $\rightarrow$ best tuned Macro F1 (fine task). ViT uses LoRA, not layer unfreezing.}
 \end{frame}
 
 
@@ -491,7 +491,7 @@
     \arch{Strong CNN}      & ---  & 0.274         & ---           & scratch  \\
     \arch{Bi-LSTM}         & ---  & 0.345         & ---           & scratch  \\
     \arch{MobileNetV3-S}   & ---  & \best{0.841}  & 0.745         & transfer  \\
-    \arch{EfficientNetB0}  & ---  & 0.739         & 0.796         & transfer  \\
+    \arch{EfficientNetB0}  & ---  & 0.739         & 0.784         & transfer  \\
     \arch{DenseNet121}     & 0.77 & 0.775         & 0.713         & transfer  \\
     \arch{EfficientNetB3}  & ---  & ---           & 0.832         & transfer \\
     \arch{ResNet50V2}      & 0.91 & 0.824         & 0.711         & transfer \\
@@ -597,7 +597,8 @@
       \textbf{Input-size handling}
       \begin{itemize}
         \item From-scratch controls use the native 32$\times$32 image or row-sequence view.
-        \item Transfer CNNs resize to 96--160\,px depending on the backbone.
+        \item EfficientNet runs resize to 96--160\,px; MobileNetV3, ResNet50V2,
+              DenseNet121, and ViT use 224\,px.
         \item ViT uses its HF processor at 224\,px, so compare it as a standalone
               transformer result rather than a Keras-run clone.
       \end{itemize}
@@ -740,11 +741,11 @@
     Baseline CNN (coarse)      & 32  & 50 & 3e-5 & 64 & from scratch \\
     Bi-LSTM (coarse)           & 32 rows & 20 & 1e-3 & 128 & from scratch \\
     Strong CNN (coarse)        & 32  & 45 & 3e-5 & 128 & aug. + regularized \\
-    MobileNetV3-S (coarse)     & 96  & 30 & 1e-4 & 32 & frozen $\to$ unfreeze \\
-    EfficientNetB0 (fine)      & 128 & 30--40 & 1e-4 / 1e-5 & 32 & frozen $\to$ block6 $\to$ full \\
+    MobileNetV3-S (coarse)     & 224 & 30 + 20 & 1e-3 / 1e-5 & 32 & frozen $\to$ unfreeze \\
+    EfficientNetB0 (fine)      & 128 & 30 / 30 / 40 & 1e-3 / 1e-4 / 1e-5 & 64 & frozen $\to$ block6 $\to$ full \\
     EfficientNetB3 (fine)      & 160 & 40 & 1e-5 & 16 & full fine-tune \\
-    ResNet50V2 (coarse/fine)   & 160 & 15--20 & 1e-4 & 32 & frozen $\to$ fine-tune \\
-    DenseNet121 (coarse/fine)  & 160 & 10--20 & 2e-6 & 32 & frozen $\to$ fine-tune \\
+    ResNet50V2 (coarse/fine)   & 224 & 20 + 5 & 1e-4 / 2e-6 & 32 & frozen $\to$ fine-tune \\
+    DenseNet121 (coarse/fine)  & 224 & 20 + 5 & 1e-4 / 2e-6 & 32 & frozen $\to$ fine-tune \\
     ViT-B/16 (fine)            & 224 & 5 each & 3e-4 / 3e-5 / 1e-4 & 16--32 & HF notebook \\
     \bottomrule
   \end{tabular}
