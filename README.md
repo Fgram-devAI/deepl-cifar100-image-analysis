@@ -121,9 +121,6 @@ venv/bin/python -m training.train --config configs/transfer/efficientnet/multicl
 # Summarize the results/ directory into a CSV
 venv/bin/python -m evaluation.summarize_results --results-dir results --output results/summary.csv
 
-# Full ablation sweep on the configured subset/task
-python -m experiments.run_ablations
-
 # Evaluation of a trained model
 python -m evaluation.ood_eval --weights results/<run>/weights.h5
 ```
@@ -231,6 +228,16 @@ Imported MobileNetV3Small run summaries:
 | MobileNetV3Small fine frozen | 100 fine classes | 0.6929 | 0.9213 | 0.6902 | 0.6898 |
 | MobileNetV3Small fine unfrozen | 100 fine classes | 0.7461 | 0.9482 | 0.7445 | 0.7435 |
 
+Imported Hugging Face ViT-B/16 notebook summaries from `notebooks/09_hf_vit_transfer_learning.ipynb`.
+These runs use CIFAR-100 fine labels only, with the Hugging Face/PyTorch stack and 224px ViT
+preprocessing.
+
+| Run | Task | Accuracy | Macro F1 | Top-3 | Top-5 |
+| --- | --- | ---: | ---: | ---: | ---: |
+| ViT-B/16 frozen head | 100 fine classes | 0.8628 | 0.8629 | 0.9538 | 0.9719 |
+| ViT-B/16 partial fine-tune | 100 fine classes | 0.8874 | 0.8873 | 0.9690 | 0.9812 |
+| ViT-B/16 LoRA | 100 fine classes | 0.9165 | 0.9165 | 0.9831 | 0.9919 |
+
 ## Project Structure
 
 - **`data/`** - CIFAR-100 loaders, binary task construction, preprocessing, row-as-timestep
@@ -239,19 +246,33 @@ Imported MobileNetV3Small run summaries:
   EfficientNet, and ResNet model builders for the local implementation.
 - **`training/`** - config-driven training loop, loss functions, callbacks, and result logging.
 - **`evaluation/`** - metrics computation and evaluation utilities.
-- **`experiments/`** - ablation sweep matrix and runners.
 - **`notebooks/`** - standalone Colab notebooks that do not depend on local source modules.
 - **`configs/`** - YAML configurations for local-code runs.
 - **`results/`** - output directory for run artifacts.
+- **`report/`** - final report and presentation materials:
+  - `Deep_Learning_Cifar100_Image_Analysis.pdf` - main written report.
+  - `presentation_latex.tex` - Beamer presentation source.
+  - `figures/` - presentation figures used by the Beamer source and Overleaf export.
 
 ## Design Constraints
 
-- **Dataset:** CIFAR-100, using fine labels and coarse superclasses to define binary tasks.
-- **Primary task style:** binary classification such as target class vs. rest or superclass vs.
-  rest.
-- **Input views:** sequential models consume row-wise sequences of shape `(32, 96)`; image models
-  consume standard image tensors of shape `(32, 32, 3)`.
-- **Hardware:** single Colab T4 target for notebooks and lightweight local runs.
-- **Guardrails:** deterministic seeds, small batches, `tf.data` pipelines, and clear separation
-  between training and evaluation.
-- **Notebooks:** runnable independently in Colab without importing local project modules.
+- **Dataset and labels:** the project uses CIFAR-100 from Hugging Face/Keras-compatible sources.
+  Each image has a 100-class fine label and a 20-class coarse superclass label. Experiments are
+  framed around binary target-vs-rest tasks, 20-class coarse multiclass classification, and
+  100-class fine multiclass classification.
+- **Task comparability:** binary tasks are evaluated with F1, ROC-AUC, PR-AUC, and confusion
+  matrices because class imbalance can make accuracy misleading. Multiclass tasks use Macro F1 as
+  the primary comparison metric, with Top-3 and Top-5 accuracy reported when available.
+- **Input views:** standard image models consume `(32, 32, 3)` CIFAR images before any model-specific
+  resizing. Sequence models consume a row-wise view `(32, 96)` so that each row is treated as a
+  timestep. Transfer CNNs resize inside the model or notebook pipeline, while the Hugging Face ViT
+  notebook uses its processor at 224px.
+- **Implementation split:** local source code provides reusable data loading, model builders,
+  config-driven training, and evaluation utilities. Notebooks are standalone Colab deliverables and
+  do not import local project modules, so they remain reproducible from a clean Colab runtime.
+- **Training guardrails:** runs use deterministic seeds where practical, explicit validation splits,
+  saved configs/metrics, small enough batches for Colab T4 or Apple Silicon local testing, and a
+  clear separation between training, evaluation, and result summarization.
+- **Result policy:** large weights and raw dataset caches remain outside Git. README tables and the
+  presentation report only cite metrics that are available from committed notebooks, exported
+  `results/` summaries, or documented local run artifacts.
